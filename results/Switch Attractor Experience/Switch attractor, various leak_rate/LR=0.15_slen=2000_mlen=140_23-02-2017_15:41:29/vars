@@ -1,0 +1,60 @@
+rc_spectral_radius : 0.99
+
+Oger : <module 'Oger' from '/usr/local/lib/python2.7/dist-packages/Oger/__init__.pyc'>
+
+switching_symbols : [1]
+
+mdp : <module 'mdp' from '/usr/local/lib/python2.7/dist-packages/mdp/__init__.pyc'>
+
+rc_size : 50
+
+rc_threshold : 0.9
+
+other_symbols : [[0]]
+
+rc_leak_rate : 0.15
+
+ex_name : Switch Attractor Experience
+
+RCNLPSwitchingAttractorLanguage : <class 'core.languages.RCNLPSwitchingAttractorLanguage.RCNLPSwitchingAttractorLanguage'>
+
+__package__ : None
+
+__builtins__ : <module '__builtin__' (built-in)>
+
+np : <module 'numpy' from '/usr/local/lib/python2.7/dist-packages/numpy/__init__.pyc'>
+
+ds_data_set_size : 40
+
+ds_memory_length : 140
+
+plt : <module 'matplotlib.pyplot' from '/usr/lib/python2.7/dist-packages/matplotlib/pyplot.pyc'>
+
+ds_slopping_memory : False
+
+ex_instance : Switch attractor, various leak_rate
+
+__file__ : switch_attractor.py
+
+ds_sparsity : 0
+
+RCNLPMetrics : core.tools.RCNLPMetrics.RCNLPMetrics
+
+RCNLPPlotGenerator : <class 'core.tools.RCNLPPlotGenerator.RCNLPPlotGenerator'>
+
+ds_training_length : 30
+
+__name__ : __main__
+
+ds_sample_length : 2000
+
+logging : <core.tools.RCNLPLogging.RCNLPLogging object at 0x7fdd51df9750>
+
+__doc__ : None
+
+ds_test_length : 10
+
+RCNLPLogging : <class 'core.tools.RCNLPLogging.RCNLPLogging'>
+
+rc_input_scaling : 0.25
+
