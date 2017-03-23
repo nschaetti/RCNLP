@@ -22,6 +22,6 @@
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from RCNLPMetrics import RCNLPMetrics
-from RCNLPLogging import RCNLPLogging
-from RCNLPPlotGenerator import RCNLPPlotGenerator
+from RCNLPMetrics import *
+from RCNLPLogging import *
+from RCNLPPlotGenerator import *

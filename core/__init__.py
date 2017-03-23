@@ -23,6 +23,7 @@
 #
 
 # Package imports
+import core.classifiers
 import core.languages
 import core.nodes
 import core.tools

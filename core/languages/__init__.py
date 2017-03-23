@@ -23,4 +23,7 @@
 #
 
 # Import package
-from RCNLPLanguage import RCNLPLanguage
+from RCNLPLanguage import *
+from RCNLPSwitchingAttractorLanguage import *
+from RCNLPMultidimensionalMemoryLanguage import *
+from RCNLPRememberSymbolsLanguage import *

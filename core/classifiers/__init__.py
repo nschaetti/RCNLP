@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# File : core/nodes/__init__.py
-# Description : Nodes directory init file.
+# File : RCNLPDiscreteSymbolNode.py
+# Description : Discrete symbol node class.
 # Auteur : Nils Schaetti <nils.schaetti@unine.ch>
 # Date : 01.02.2017 17:59:05
 # Lieu : Nyon, Suisse
@@ -22,8 +22,4 @@
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from RCNLPDiscreteSymbolNode import *
-from RCNLPCbowReservoirNode import *
-from RCNLPThresholdOutputNode import *
-from WordReservoirNode import *
-
+from RCNLPTextClassifier import *

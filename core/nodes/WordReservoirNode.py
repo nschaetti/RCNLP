@@ -4,16 +4,18 @@ import numpy as np
 import collections
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+
 try:
     import cudamat as cm
 except:
     pass
 
+
 class WordReservoirNode(Oger.nodes.LeakyReservoirNode):
-    """Reservoir node with leaky integrator neurons to handle distributed representation of words. 
+    """Reservoir node with leaky integrator neurons to handle distributed representation of words.
     """
 
-    def __init__(self, nb_words = 1.0, word_sparsity = 1.0, *args, **kwargs):
+    def __init__(self, nb_words=1.0, word_sparsity=1.0, *args, **kwargs):
         """Initializes and constructs a random reservoir with leaky-integrator neurons.
            Parameters are:
                 - input_dim: input dimensionality
@@ -32,24 +34,24 @@ class WordReservoirNode(Oger.nodes.LeakyReservoirNode):
            If w, w_in or w_bias were given as a numpy array or a function, these will be used as initialization instead.
         """
         super(WordReservoirNode, self).__init__(*args, **kwargs)
-        
+
         # Number if neurons linked to each inputs
         if self.input_dim >= self.output_dim:
             nb_neurons = 1
         else:
             nb_neurons = int(self.output_dim / self.input_dim * word_sparsity)
         print("Number of neurons per inputs : " + str(nb_neurons))
-        
+
         # Permutations
-        permuts = np.random.choice(self.output_dim, nb_neurons * self.input_dim, replace = False)
+        permuts = np.random.choice(self.output_dim, nb_neurons * self.input_dim, replace=False)
         permuts.shape = (self.input_dim, nb_neurons)
-        
+
         # Init
         self.w_in = mdp.numx.zeros((self.output_dim, self.input_dim))
-        
+
         # For each inputs
         n_neur = 0
         for inp in permuts:
-            self.w_in[inp,n_neur] = mdp.numx.random.randint(0, 2, (nb_neurons)) * 2 - 1
+            self.w_in[inp, n_neur] = mdp.numx.random.randint(0, 2, (nb_neurons)) * 2 - 1
             n_neur += 1
         self.w_in *= self.input_scaling
