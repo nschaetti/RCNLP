@@ -32,6 +32,11 @@ class RCNLPMultidimensionalMemoryLanguage:
 
     # Constructeur
     def __init__(self, n_dim, memory_shifting):
+        """
+
+        :param n_dim:
+        :param memory_shifting:
+        """
         pass
     # end __init__
     

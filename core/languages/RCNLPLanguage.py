@@ -29,16 +29,32 @@ class RCNLPLanguage(object):
 
     # Constructor
     def __init__(self, *args, **kwargs):
+        """
+
+        :param args:
+        :param kwargs:
+        """
         pass
     # end __init__
 
     # Generate a sample
     def generate(self, length=1000):
+        """
+
+        :param length:
+        :return:
+        """
         pass
     # end generate
 
     # Generate a complete data set
     def generate_data_set(self, n_samples=10, sample_length=1000):
+        """
+
+        :param n_samples:
+        :param sample_length:
+        :return:
+        """
         pass
     # end generate_data_set
 
