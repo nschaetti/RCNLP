@@ -29,7 +29,7 @@ import RCNLPLanguage
 #
 # CLASS RememberSymbols
 #
-class RCNLPRememberSymbolsLanguage(RCNLPLanguage):
+class RCNLPRememberSymbolsLanguage(object):
 
     # Constructeur
     def __init__(self, n_symbols):
