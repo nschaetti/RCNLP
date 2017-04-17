@@ -23,43 +23,29 @@
 #
 
 import io
-import json
+import argparse
+from core.converters.RCNLPFuncWordConverter import RCNLPFuncWordConverter
 
 
-class PAN16AuthorDiarizationLoader(object):
+if __name__ == "__main__":
 
-    # Constructor
-    def __init__(self):
-        pass
-    # end __init__
+    # Argument parser
+    parser = argparse.ArgumentParser(description="RCNLP - Authorship attribution with Part-Of-Speech to Echo State Network")
 
-    # Call
-    def __call__(self, truth_file, text_file):
-        """
+    # Argument
+    parser.add_argument("--file", type=str, help="Input text file")
+    parser.add_argument("--lang", type=str, help="Language (ar, en, es, pt)", default='en')
+    parser.add_argument("--sample-size", type=int, help="Word vector sample size", default=300)
+    args = parser.parse_args()
 
-        :param truth_file:
-        :param text_file:
-        :return:
-        """
+    # Convert the text to Temporal Vector Representation
+    converter = RCNLPFuncWordConverter()
+    doc_array = converter(io.open(args.file, 'r').read())
 
-        # Load JSON truth
-        truth = json.load(io.open(truth_file, 'r'))
+    # Display the Temporal Vector Representation
+    RCNLPFuncWordConverter.display_representations(doc_array)
 
-        # Load text
-        text = io.open(text_file, 'r').read()
+    # Transform the TVR to ESN learning input
+    data_set = RCNLPFuncWordConverter.generate_data_set_inputs(doc_array, 2, 0)
 
-        # Foreach author
-        data_set = []
-        for author in truth['authors']:
-            texts = []
-            # For each extend
-            for extent in author:
-                texts += [text[extent['from']:extent['to']]]
-            # end for
-            data_set += [texts]
-        # end for
-
-        return data_set
-    # end __call__
-
-# end PAN16AuthorDiarizationLoader
+# end if

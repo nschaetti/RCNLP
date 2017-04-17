@@ -22,44 +22,31 @@
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import io
-import json
+import argparse
+from core.tools.PAN16AuthorDiarizationLoader import PAN16AuthorDiarizationLoader
 
 
-class PAN16AuthorDiarizationLoader(object):
+if __name__ == "__main__":
 
-    # Constructor
-    def __init__(self):
-        pass
-    # end __init__
+    # Argument parser
+    parser = argparse.ArgumentParser(description="RCNLP - Authorship Diarization with Echo State Network")
 
-    # Call
-    def __call__(self, truth_file, text_file):
-        """
+    # Argument
+    parser.add_argument("--file", type=str, help="Input text file")
+    parser.add_argument("--truth", type=str, help="Truth JSON file")
+    args = parser.parse_args()
 
-        :param truth_file:
-        :param text_file:
-        :return:
-        """
+    # Parse file
+    loader = PAN16AuthorDiarizationLoader()
+    data_set = loader(args.truth, args.file)
 
-        # Load JSON truth
-        truth = json.load(io.open(truth_file, 'r'))
-
-        # Load text
-        text = io.open(text_file, 'r').read()
-
-        # Foreach author
-        data_set = []
-        for author in truth['authors']:
-            texts = []
-            # For each extend
-            for extent in author:
-                texts += [text[extent['from']:extent['to']]]
-            # end for
-            data_set += [texts]
+    # For each author
+    for author in data_set:
+        print("#################################################################")
+        # For each text
+        for text in author:
+            print("[" + text + "]")
         # end for
+    # end for
 
-        return data_set
-    # end __call__
-
-# end PAN16AuthorDiarizationLoader
+# end if
