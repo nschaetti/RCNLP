@@ -27,36 +27,29 @@ import spacy
 from RCNLPConverter import RCNLPConverter
 
 
-class RCNLPPosConverter(RCNLPConverter):
+class RCNLPTagConverter(RCNLPConverter):
 
     # Constructor
-    def __init__(self, lang='en', pos_to_sym=[]):
-        """
-        Constructor
-        :param lang:
-        :param pos_to_sym:
-        """
+    def __init__(self, lang='en', tag_to_sym=[]):
         # Base class
-        super(RCNLPPosConverter, self).__init__(lang=lang)
+        super(RCNLPTagConverter, self).__init__(lang=lang)
 
         # Generate tag symbols
-        if len(pos_to_sym) == 0:
-            self._pos_symbols = RCNLPPosConverter.generate_pos_symbols()
+        if len(tag_to_sym) == 0:
+            self._tag_symbols = RCNLPTagConverter.generate_tag_symbols()
         else:
-            self._pos_symbols = pos_to_sym
+            self._tag_symbols = tag_to_sym
         # end if
     # end __init__
 
     # Generate tag symbols
     @staticmethod
-    def generate_pos_symbols():
-        """
-        Generate tag symbols
-        :return:
-        """
+    def generate_tag_symbols():
         result = dict()
-        pos = [u"ADJ", u"ADP", u"ADV", u"CCONJ", u"DET", u"NOUN", u"NUM", u"PART", u"PRON", u"PROPN", u"PUNCT",
-               u"SYM", u"VERB", u"X"]
+        pos = [u"''", u",", u":", u".", u"``", u"-LRB-", u"-RRB-", u"AFX", u"CC", u"CD", u"DT", u"EX", u"FW", u"IN",
+               u"IN", u"JJ", u"JJR", u"JJS", u"LS", u"MD", u"NN", u"NNS", u"NNP", u"NNPS", u"PDT", u"POS", u"PRP",
+               u"PRP$", u"RB", u"RBR", u"RBS", u"RP", u"SYM", u"TO", u"UH", u"VB", u"VBZ", u"VBP", u"VBD", u"VBN",
+               u"VBG", u"WDT", u"WP", u"WP$", u"WRB"]
         n_pos = len(pos)
         for index, p in enumerate(pos):
             result[p] = np.zeros(n_pos)
@@ -66,14 +59,9 @@ class RCNLPPosConverter(RCNLPConverter):
     # end _generate_tag_symbols
 
     # Get symbol from tag
-    def pos_to_symbol(self, pos):
-        """
-        Get symbol from tag
-        :param pos:
-        :return:
-        """
-        if pos in self._pos_symbols.keys():
-            return self._pos_symbols[pos]
+    def tag_to_symbol(self, pos):
+        if pos in self._tag_symbols.keys():
+            return self._tag_symbols[pos]
         return None
     # end pos_to_symbol
 
@@ -94,10 +82,9 @@ class RCNLPPosConverter(RCNLPConverter):
         # Resulting numpy array
         doc_array = np.array([])
 
-        # For each words
         for index, word in enumerate(doc):
-            if word.pos_ not in exclude and word not in word_exclude:
-                sym = self.pos_to_symbol(word.pos_)
+            if word.tag_ not in exclude and word not in word_exclude:
+                sym = self.tag_to_symbol(word.tag_)
                 if sym is not None:
                     if index == 0:
                         doc_array = sym
@@ -107,7 +94,6 @@ class RCNLPPosConverter(RCNLPConverter):
                 # end if
             # end if
         # end for
-
         return doc_array
     # end convert
 

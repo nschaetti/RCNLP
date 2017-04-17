@@ -24,58 +24,23 @@
 
 import numpy as np
 import spacy
+import scipy.signal as sig
 from RCNLPConverter import RCNLPConverter
 
 
-class RCNLPPosConverter(RCNLPConverter):
+class RCNLPWordVectorConverter(RCNLPConverter):
 
     # Constructor
-    def __init__(self, lang='en', pos_to_sym=[]):
+    def __init__(self, lang='en', resize=300):
         """
         Constructor
         :param lang:
-        :param pos_to_sym:
+        :param resize:
         """
         # Base class
-        super(RCNLPPosConverter, self).__init__(lang=lang)
-
-        # Generate tag symbols
-        if len(pos_to_sym) == 0:
-            self._pos_symbols = RCNLPPosConverter.generate_pos_symbols()
-        else:
-            self._pos_symbols = pos_to_sym
-        # end if
+        super(RCNLPWordVectorConverter, self).__init__(lang=lang)
+        self._resize = resize
     # end __init__
-
-    # Generate tag symbols
-    @staticmethod
-    def generate_pos_symbols():
-        """
-        Generate tag symbols
-        :return:
-        """
-        result = dict()
-        pos = [u"ADJ", u"ADP", u"ADV", u"CCONJ", u"DET", u"NOUN", u"NUM", u"PART", u"PRON", u"PROPN", u"PUNCT",
-               u"SYM", u"VERB", u"X"]
-        n_pos = len(pos)
-        for index, p in enumerate(pos):
-            result[p] = np.zeros(n_pos)
-            result[p][index] = 1.0
-        # end for
-        return result
-    # end _generate_tag_symbols
-
-    # Get symbol from tag
-    def pos_to_symbol(self, pos):
-        """
-        Get symbol from tag
-        :param pos:
-        :return:
-        """
-        if pos in self._pos_symbols.keys():
-            return self._pos_symbols[pos]
-        return None
-    # end pos_to_symbol
 
     # Convert a string to a ESN input
     def __call__(self, text, exclude=list(), word_exclude=list()):
@@ -94,20 +59,19 @@ class RCNLPPosConverter(RCNLPConverter):
         # Resulting numpy array
         doc_array = np.array([])
 
-        # For each words
         for index, word in enumerate(doc):
-            if word.pos_ not in exclude and word not in word_exclude:
-                sym = self.pos_to_symbol(word.pos_)
-                if sym is not None:
-                    if index == 0:
-                        doc_array = sym
-                    else:
-                        doc_array = np.vstack((doc_array, sym))
-                    # end if
+            if word not in exclude:
+                word_vector = word.vector
+                if self._resize != 300:
+                    word_vector = sig.resample(word_vector, self._resize)
+                # end if
+                if index == 0:
+                    doc_array = word_vector
+                else:
+                    doc_array = np.vstack((doc_array, word_vector))
                 # end if
             # end if
         # end for
-
         return doc_array
     # end convert
 

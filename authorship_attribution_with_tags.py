@@ -24,7 +24,7 @@
 
 import io
 import argparse
-from core.converters.RCNLPPosConverter import RCNLPPosConverter
+from core.converters.RCNLPTagConverter import RCNLPTagConverter
 
 
 if __name__ == "__main__":
@@ -37,13 +37,11 @@ if __name__ == "__main__":
     parser.add_argument("--lang", type=str, help="Language (ar, en, es, pt)", default='en')
     args = parser.parse_args()
 
-    converter = RCNLPPosConverter()
+    converter = RCNLPTagConverter()
     doc_array = converter(io.open(args.file, 'r').read())
     print(doc_array)
     print(doc_array.shape)
     print(doc_array[0])
-    RCNLPPosConverter.display_representations(doc_array)
-    data_set = RCNLPPosConverter.generate_data_set_inputs(doc_array, 2, 0)
-    print(data_set)
+    RCNLPTagConverter.display_representations(doc_array)
 
 # end if

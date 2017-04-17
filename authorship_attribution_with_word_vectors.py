@@ -24,7 +24,7 @@
 
 import io
 import argparse
-from core.converters.RCNLPPosConverter import RCNLPPosConverter
+from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
 
 
 if __name__ == "__main__":
@@ -35,15 +35,17 @@ if __name__ == "__main__":
     # Argument
     parser.add_argument("--file", type=str, help="Input text file")
     parser.add_argument("--lang", type=str, help="Language (ar, en, es, pt)", default='en')
+    parser.add_argument("--sample-size", type=int, help="Word vector sample size", default=300)
     args = parser.parse_args()
 
-    converter = RCNLPPosConverter()
+    # Convert the text to Temporal Vector Representation
+    converter = RCNLPWordVectorConverter(resize=args.sample_size)
     doc_array = converter(io.open(args.file, 'r').read())
-    print(doc_array)
-    print(doc_array.shape)
-    print(doc_array[0])
-    RCNLPPosConverter.display_representations(doc_array)
-    data_set = RCNLPPosConverter.generate_data_set_inputs(doc_array, 2, 0)
-    print(data_set)
+
+    # Display the Temporal Vector Representation
+    RCNLPWordVectorConverter.display_representations(doc_array)
+
+    # Transform the TVR to ESN learning input
+    data_set = RCNLPWordVectorConverter.generate_data_set_inputs(doc_array, 2, 0)
 
 # end if

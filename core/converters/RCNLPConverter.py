@@ -22,6 +22,10 @@
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+# Imports
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 class RCNLPConverter(object):
 
@@ -35,7 +39,7 @@ class RCNLPConverter(object):
     # end __init__
 
     # Convert a string to a ESN input
-    def __call__(self, text):
+    def __call__(self, text, exclude=list(), word_exclude=list()):
         """
         Convert a string to a ESN input
         :param text: The text to convert.
@@ -43,5 +47,40 @@ class RCNLPConverter(object):
         """
         pass
     # end convert
+
+    # Display representations
+    @staticmethod
+    def display_representations(rep):
+        """
+        Display representations
+        :param rep:
+        :return:
+        """
+        plt.imshow(rep, cmap='Greys')
+        plt.show()
+    # end display_representations
+
+    # Generate data set inputs
+    @staticmethod
+    def generate_data_set_inputs(reps, n_authors, author):
+        """
+        Generate data set inputs
+        :param reps:
+        :param n_authors:
+        :param author:
+        :return:
+        """
+        # Number of representations
+        n_reps = reps.shape[0]
+
+        # Author vector
+        author_vector = np.zeros((1, n_authors))
+        author_vector[0, author] = 1.0
+
+        # Output
+        outputs = np.repeat(author_vector, n_reps, axis=0)
+
+        return zip(reps, outputs)
+    # end generate_data_set_inputs
 
 # end RCNLPConverter
