@@ -94,6 +94,11 @@ class RCNLPPlotGenerator(object):
 
     # end plot
 
+    # Image
+    def imshow(self, data, cmap=None):
+        plt.imshow(data, cmap=cmap)
+    # end imshow
+
     # Add horizontal line
     def add_hline(self, value, length, label="", subplot=1):
 

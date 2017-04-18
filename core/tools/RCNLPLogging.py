@@ -25,8 +25,10 @@ import os
 import time
 import subprocess
 
+
 # Log the result of an experiment
 class RCNLPLogging(object):
+
     # Constructor
     def __init__(self, results_directoy="results", exp_name="noname", exp_inst="noname", exp_value=""):
 
@@ -100,6 +102,19 @@ class RCNLPLogging(object):
         f.close()
 
     # end save_globals
+
+    # Generate experience name
+    @staticmethod
+    def generate_experience_name(variables):
+        name = ""
+        # For each variables
+        for var in variables:
+            if var[0:3] == "rc_":
+                name += var[3:] + "=" + str(variables[var]) + "_"
+            # end if
+        # end for
+        return name
+    # end generate_experience_name
 
     # Save a variable
     def save_variable(self, name, value):

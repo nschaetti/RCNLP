@@ -25,5 +25,5 @@
 from RCNLPDiscreteSymbolNode import *
 from RCNLPCbowReservoirNode import *
 from RCNLPThresholdOutputNode import *
-from WordReservoirNode import *
+from RCNLPWordReservoirNode import *
 
