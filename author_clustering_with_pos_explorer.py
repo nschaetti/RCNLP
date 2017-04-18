@@ -49,11 +49,12 @@ ex_name = "Author clustering Experience"
 ex_instance = "Author clustering, PCA"
 
 # Reservoir Properties
-rc_leak_rate = 0.1  # Leak rate
+a_leak_rate = np.arange(0.05, 1.0, 0.1)  # Leak rate
+rc_leak_rate = "0.05-1.0"
 rc_input_scaling = 0.5  # Input scaling
-rc_size = 200  # Reservoir size
+rc_size = 100  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
-rc_word_sparsity = 0.2
+rc_word_sparsity = 0.5
 rc_w_sparsity = 0.1
 
 # Data set properties
@@ -68,7 +69,6 @@ ds_sparsity = 0  # Number of samples with no switching
 ####################################################
 # Function
 ####################################################
-
 
 # Create a reservoir
 def create_reservoir(n_symbols, word_sparsity, size, input_scaling, leak_rate, spectral_radius, w_sparsity):
@@ -200,14 +200,12 @@ def get_average_state_success_rate(idx, sample_size):
 # end get_average_state_success_rate
 
 
-def main():
+def main(word_sparsity, size, input_scaling, leak_rate, spectral_radius, w_sparsity):
     # Create a reservoir
-    flow = create_reservoir(14, rc_word_sparsity, rc_size, rc_input_scaling, rc_leak_rate,
-                            rc_spectral_radius, rc_w_sparsity)
+    flow = create_reservoir(14, word_sparsity, size, input_scaling, leak_rate, spectral_radius, w_sparsity)
 
     # Generate states for first author
     for index, text_file in enumerate(os.listdir(args.author1)):
-        print("Generating state for author 1 from file %s" % os.path.join(args.author1, text_file))
         if index == 0:
             state1 = generate_reservoir_states(flow, os.path.join(args.author1, text_file), args.startup)
         else:
@@ -219,16 +217,8 @@ def main():
             # end if
     # end for
 
-    # Display reservoir states for author 1
-    plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
-    plot.add_sub_plot(title=ex_instance + ", Reservoir states for Author 1", x_label="Time", y_label="Neurons")
-    plot.imshow(np.transpose(state1), cmap='Greys')
-    logging.save_plot(plot)
-    print("Dimensions of states for author 1 : " + str(state1.shape))
-
     # Generate states for second author
     for index, text_file in enumerate(os.listdir(args.author2)):
-        print("Generating state for author 2 from file %s" % os.path.join(args.author2, text_file))
         if index == 0:
             state2 = generate_reservoir_states(flow, os.path.join(args.author2, text_file), args.startup)
         else:
@@ -239,13 +229,6 @@ def main():
             break
             # end if
     # end for
-
-    # Display reservoir states for author 2
-    plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
-    plot.add_sub_plot(title=ex_instance + ", Reservoir states for Author 2", x_label="Time", y_label="Neurons")
-    plot.imshow(np.transpose(state2), cmap='Greys')
-    logging.save_plot(plot)
-    print("Dimensions of states for author 2 : " + str(state2.shape))
 
     # Same size for each authors
     if state1.shape[0] > state2.shape[0]:
@@ -258,24 +241,6 @@ def main():
 
     # Join states
     join_states = np.vstack((state1, state2))
-    plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
-    plot.add_sub_plot(title=ex_instance + ", Joined Reservoir states", x_label="Time", y_label="Neurons")
-    plot.imshow(np.transpose(join_states), cmap='Greys')
-    logging.save_plot(plot)
-    print("Dimensions of joined states : " + str(join_states.shape))
-
-    # PCA
-    pca = PCA(n_components=args.ncomponents)
-    pca.fit(join_states)
-
-    # Generate PCA
-    reduced1 = pca.transform(state1)
-    reduced2 = pca.transform(state2)
-
-    # Generate PCA image for 1th and 2th
-    for c in np.arange(0, 8):
-        save_pca_image(reduced1, reduced2, c, c+1)
-    # end for
 
     # Get centroids for the whole components
     centroids, _ = kmeans(join_states, 2)
@@ -285,9 +250,7 @@ def main():
 
     # Compute average state success rate
     logging.save_results("Average state ratio", get_average_state_success_rate(idx, sample_size), display=True)
-
-    # Open logging dir
-    logging.open_dir()
+    return get_average_state_success_rate(idx, sample_size)
 # end main
 
 ####################################################
@@ -315,6 +278,21 @@ if __name__ == "__main__":
     logging.save_variables(locals())
 
     # Main
-    main()
+    results = []
+    for leak_rate in a_leak_rate:
+        print("Computing average state ratio for leak rate = %f" % leak_rate)
+        results += [main(word_sparsity=rc_word_sparsity, size=rc_size, input_scaling=rc_input_scaling,
+                         leak_rate=leak_rate, spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)]
+    # end for
+
+    # Plot pred and bos
+    plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
+    plot.add_sub_plot(title=ex_instance + ", explore leak rate", x_label="Leak rate", y_label="Average state ratio")
+    plot.plot(x=rc_leak_rate, y=results, label="Average state ratio", subplot=1)
+    plot.add_hline(value=50, length=53622, subplot=1)
+    logging.save_plot(plot)
+
+    # Open logging dir
+    logging.open_dir()
 
 # end if
