@@ -28,76 +28,57 @@ from RCNLPConverter import RCNLPConverter
 
 
 class RCNLPFuncWordConverter(RCNLPConverter):
+    """
+    Convert text to function word symbols.
+    """
 
-    # Constructor
-    def __init__(self, lang='en', words_to_sym=[]):
+    # Get tags
+    def get_tags(self):
         """
-        Constructor
-        :param lang:
-        :param pos_to_sym:
+        Get tags.
+        :return: A tag list.
         """
-        # Base class
-        super(RCNLPFuncWordConverter, self).__init__(lang=lang)
+        return [u"a", u"about", u"above", u"after", u"after", u"again", u"against", u"ago", u"ahead",
+                u"all",
+                u"almost", u"along", u"already", u"also", u"although", u"always", u"am", u"among", u"an",
+                u"and", u"any", u"are", u"aren't", u"around", u"as", u"at", u"away", u"backward",
+                u"backwards", u"be", u"because", u"before", u"behind", u"below", u"beneath", u"beside",
+                u"between", u"both", u"but", u"by", u"can", u"cannot", u"can't", u"cause", u"'cos",
+                u"could",
+                u"couldn't", u"'d", u"despite", u"did", u"didn't", u"do", u"does", u"doesn't", u"don't",
+                u"down", u"during", u"each", u"either", u"even", u"ever", u"every", u"except", u"for",
+                u"forward", u"from", u"had", u"hadn't", u"has", u"hasn't", u"have", u"haven't", u"he",
+                u"her", u"here", u"hers", u"herself", u"him", u"himself", u"his", u"how", u"however",
+                u"I",
+                u"if", u"in", u"inside", u"inspite", u"instead", u"into", u"is", u"isn't", u"it", u"its",
+                u"itself", u"just", u"'ll", u"least", u"less", u"like", u"'m", u"many", u"may",
+                u"mayn't",
+                u"me", u"might", u"mightn't", u"mine", u"more", u"most", u"much", u"must", u"mustn't",
+                u"my", u"myself", u"near", u"need", u"needn't", u"needs", u"neither", u"never", u"no",
+                u"none", u"nor", u"not", u"now", u"of", u"off", u"often", u"on", u"once", u"only",
+                u"onto",
+                u"or", u"ought", u"oughtn't", u"our", u"ours", u"ourselves", u"out", u"outside", u"over",
+                u"past", u"perhaps", u"quite", u"'re", u"rather", u"'s", u"seldom", u"several", u"shall",
+                u"shan't", u"she", u"should", u"shouldn't", u"since", u"so", u"some", u"sometimes",
+                u"soon",
+                u"than", u"that", u"the", u"their", u"theirs", u"them", u"themselves", u"then", u"there",
+                u"therefore", u"these", u"they", u"this", u"those", u"though", u"through", u"thus",
+                u"till",
+                u"to", u"together", u"too", u"towards", u"under", u"unless", u"until", u"up", u"upon",
+                u"us", u"used", u"usedn't", u"usen't", u"usually", u"'ve", u"very", u"was", u"wasn't",
+                u"we", u"well", u"were", u"weren't", u"what", u"when", u"where", u"whether", u"which",
+                u"while", u"who", u"whom", u"whose", u"why", u"will", u"with", u"without", u"won't",
+                u"would", u"wouldn't", u"yet", u"you", u"your", u"yours", u"yourself", u"yourselves"]
+    # end get_tags
 
-        # Generate tag symbols
-        if len(words_to_sym) == 0:
-            self._word_symbols = RCNLPFuncWordConverter.generate_word_symbols()
-        else:
-            self._word_symbols = words_to_sym
-        # end if
-    # end __init__
-
-    # Generate word symbols
-    @staticmethod
-    def generate_word_symbols():
+    # Get inputs size
+    def _get_inputs_size(self):
         """
-        Generate word symbols
-        :return:
+        Get inputs size.
+        :return: The input size.
         """
-        result = dict()
-        function_words = [u"a", u"about", u"above", u"after", u"after", u"again", u"against", u"ago", u"ahead", u"all",
-                          u"almost", u"along", u"already", u"also", u"although", u"always", u"am", u"among", u"an",
-                          u"and", u"any", u"are", u"aren't", u"around", u"as", u"at", u"away", u"backward",
-                          u"backwards", u"be", u"because", u"before", u"behind", u"below", u"beneath", u"beside",
-                          u"between", u"both", u"but", u"by", u"can", u"cannot", u"can't", u"cause", u"'cos", u"could",
-                          u"couldn't", u"'d", u"despite", u"did", u"didn't", u"do", u"does", u"doesn't", u"don't",
-                          u"down", u"during", u"each", u"either", u"even", u"ever", u"every", u"except", u"for",
-                          u"forward", u"from", u"had", u"hadn't", u"has", u"hasn't", u"have", u"haven't", u"he",
-                          u"her", u"here", u"hers", u"herself", u"him", u"himself", u"his", u"how", u"however", u"I",
-                          u"if", u"in", u"inside", u"inspite", u"instead", u"into", u"is", u"isn't", u"it", u"its",
-                          u"itself", u"just", u"'ll", u"least", u"less", u"like", u"'m", u"many", u"may", u"mayn't",
-                          u"me", u"might", u"mightn't", u"mine", u"more", u"most", u"much", u"must", u"mustn't",
-                          u"my", u"myself", u"near", u"need", u"needn't", u"needs", u"neither", u"never", u"no",
-                          u"none", u"nor", u"not", u"now", u"of", u"off", u"often", u"on", u"once", u"only", u"onto",
-                          u"or", u"ought", u"oughtn't", u"our", u"ours", u"ourselves", u"out", u"outside", u"over",
-                          u"past", u"perhaps", u"quite", u"'re", u"rather", u"'s", u"seldom", u"several", u"shall",
-                          u"shan't", u"she", u"should", u"shouldn't", u"since", u"so", u"some", u"sometimes", u"soon",
-                          u"than", u"that", u"the", u"their", u"theirs", u"them", u"themselves", u"then", u"there",
-                          u"therefore", u"these", u"they", u"this", u"those", u"though", u"through", u"thus", u"till",
-                          u"to", u"together", u"too", u"towards", u"under", u"unless", u"until", u"up", u"upon",
-                          u"us", u"used", u"usedn't", u"usen't", u"usually", u"'ve", u"very", u"was", u"wasn't",
-                          u"we", u"well", u"were", u"weren't", u"what", u"when", u"where", u"whether", u"which",
-                          u"while", u"who", u"whom", u"whose", u"why", u"will", u"with", u"without", u"won't",
-                          u"would", u"wouldn't", u"yet", u"you", u"your", u"yours", u"yourself", u"yourselves"]
-        n_words = len(function_words)
-        for index, p in enumerate(function_words):
-            result[p] = np.zeros(n_words)
-            result[p][index] = 1.0
-        # end for
-        return result
-    # end generate_word_symbols
-
-    # Get symbol from word
-    def word_to_symbol(self, word):
-        """
-        Get symbol from word
-        :param word:
-        :return:
-        """
-        if word in self._word_symbols.keys():
-            return self._word_symbols[word]
-        return None
-    # end word_to_symbol
+        return len(self.get_tags())
+    # end if
 
     # Convert a string to a ESN input
     def __call__(self, text, exclude=list(), word_exclude=list()):
@@ -120,7 +101,7 @@ class RCNLPFuncWordConverter(RCNLPConverter):
         init = False
         for index, word in enumerate(doc):
             if word not in word_exclude:
-                sym = self.word_to_symbol(word.text)
+                sym = self.tag_to_symbol(word.text)
                 if sym is not None:
                     if not init:
                         doc_array = sym
@@ -132,7 +113,7 @@ class RCNLPFuncWordConverter(RCNLPConverter):
             # end if
         # end for
 
-        return doc_array
+        return self.reduce(doc_array)
     # end convert
 
 # end RCNLPConverter

@@ -28,42 +28,30 @@ from RCNLPConverter import RCNLPConverter
 
 
 class RCNLPTagConverter(RCNLPConverter):
+    """
+    Convert text to Part-Of-Speech Tags symbols.
+    """
 
-    # Constructor
-    def __init__(self, lang='en', tag_to_sym=[]):
-        # Base class
-        super(RCNLPTagConverter, self).__init__(lang=lang)
-
-        # Generate tag symbols
-        if len(tag_to_sym) == 0:
-            self._tag_symbols = RCNLPTagConverter.generate_tag_symbols()
-        else:
-            self._tag_symbols = tag_to_sym
-        # end if
-    # end __init__
-
-    # Generate tag symbols
-    @staticmethod
-    def generate_tag_symbols():
-        result = dict()
-        pos = [u"''", u",", u":", u".", u"``", u"-LRB-", u"-RRB-", u"AFX", u"CC", u"CD", u"DT", u"EX", u"FW", u"IN",
+    # Get tags
+    def get_tags(self):
+        """
+        Get all tags.
+        :return: A list of tags.
+        """
+        return [u"''", u",", u":", u".", u"``", u"-LRB-", u"-RRB-", u"AFX", u"CC", u"CD", u"DT", u"EX", u"FW", u"IN",
                u"IN", u"JJ", u"JJR", u"JJS", u"LS", u"MD", u"NN", u"NNS", u"NNP", u"NNPS", u"PDT", u"POS", u"PRP",
                u"PRP$", u"RB", u"RBR", u"RBS", u"RP", u"SYM", u"TO", u"UH", u"VB", u"VBZ", u"VBP", u"VBD", u"VBN",
                u"VBG", u"WDT", u"WP", u"WP$", u"WRB"]
-        n_pos = len(pos)
-        for index, p in enumerate(pos):
-            result[p] = np.zeros(n_pos)
-            result[p][index] = 1.0
-        # end for
-        return result
-    # end _generate_tag_symbols
+    # end get_tags
 
-    # Get symbol from tag
-    def tag_to_symbol(self, pos):
-        if pos in self._tag_symbols.keys():
-            return self._tag_symbols[pos]
-        return None
-    # end pos_to_symbol
+    # Get the number of inputs
+    def _get_inputs_size(self):
+        """
+        Get the input size.
+        :return: The input size.
+        """
+        return len(self.get_tags())
+    # end get_n_inputs
 
     # Convert a string to a ESN input
     def __call__(self, text, exclude=list(), word_exclude=list()):
@@ -94,7 +82,8 @@ class RCNLPTagConverter(RCNLPConverter):
                 # end if
             # end if
         # end for
-        return doc_array
+
+        return self.reduce(doc_array)
     # end convert
 
 # end RCNLPConverter

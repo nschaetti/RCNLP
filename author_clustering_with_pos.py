@@ -29,6 +29,9 @@ import Oger
 import numpy as np
 from sklearn.decomposition import PCA
 from core.converters.RCNLPPosConverter import RCNLPPosConverter
+from core.converters.RCNLPTagConverter import RCNLPTagConverter
+from core.converters.RCNLPFuncWordConverter import RCNLPFuncWordConverter
+from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
 from core.tools.RCNLPLogging import RCNLPLogging
 from core.nodes.RCNLPWordReservoirNode import RCNLPWordReservoirNode
 from core.tools.RCNLPPlotGenerator import RCNLPPlotGenerator
@@ -50,20 +53,11 @@ ex_instance = "Author clustering, PCA"
 
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
-rc_input_scaling = 0.5  # Input scaling
+rc_input_scaling = (1.0 / 30.0)  # Input scaling
 rc_size = 200  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_word_sparsity = 0.2
 rc_w_sparsity = 0.1
-
-# Data set properties
-ds_data_set_size = 40  # Data set size (number of samples)
-ds_memory_length = 1200  # How long time to remember the entry
-ds_training_length = 30  # Training set length (number of samples)
-ds_test_length = ds_data_set_size - ds_training_length
-ds_sample_length = 3000  # Length of a sample
-ds_slopping_memory = False  # Is the memory slowly fading away?
-ds_sparsity = 0  # Number of samples with no switching
 
 ####################################################
 # Function
@@ -87,24 +81,14 @@ def create_reservoir(n_symbols, word_sparsity, size, input_scaling, leak_rate, s
                                        leak_rate=leak_rate, spectral_radius=spectral_radius,
                                        word_sparsity=word_sparsity, w_sparsity=w_sparsity)
 
+    # Reset state at each call
+    reservoir.reset_states = True
+
     # Create the flow
     r_flow = mdp.Flow([reservoir], verbose=1)
 
     return r_flow
 # end create_reservoir
-
-
-# Generate reservoir states
-def generate_reservoir_states(the_flow, filename, remove_startup=0):
-    # Convert the text to Temporal Vector Representation
-    converter = RCNLPPosConverter()
-    doc_array = converter(io.open(filename, 'r').read())
-
-    # Generate the reservoir state
-    states = the_flow(doc_array)[remove_startup:]
-
-    return states
-# end generate_reservoir_states
 
 
 # Generate PCA image
@@ -200,91 +184,162 @@ def get_average_state_success_rate(idx, sample_size):
 # end get_average_state_success_rate
 
 
-def main():
-    # Create a reservoir
-    flow = create_reservoir(14, rc_word_sparsity, rc_size, rc_input_scaling, rc_leak_rate,
-                            rc_spectral_radius, rc_w_sparsity)
+# Get average success rate
+def get_average_precision(a1_idx, a2_idx, a1_index, a2_index):
+    pass
+# end get_average_success_rate
+
+
+# Generate reservoir states
+def generate_reservoir_states(converter, the_flow, filename, remove_startup=0):
+    """
+    Generate reservoir states.
+    :param the_flow:
+    :param filename:
+    :param remove_startup:
+    :return:
+    """
+    # Convert the text to Temporal Vector Representation
+    doc_array = converter(io.open(filename, 'r').read())
+
+    # Generate the reservoir state
+    states = the_flow(doc_array)[remove_startup:]
+
+    return states
+# end generate_reservoir_states
+
+
+# Generate the states for all documents.
+def generate_documents_states(converter, flow, text_directory):
+    """
+    Generate the states for all documents
+    :param flow:
+    :param text_directory:
+    :return:
+    """
+    # Documents indexes
+    pos = 0
+    doc_indexes = list()
 
     # Generate states for first author
-    for index, text_file in enumerate(os.listdir(args.author1)):
-        print("Generating state for author 1 from file %s" % os.path.join(args.author1, text_file))
+    for index, text_file in enumerate(os.listdir(text_directory)):
+        print("Generating state for author file %s (%d)" % (os.path.join(text_directory, text_file), index+1))
         if index == 0:
-            state1 = generate_reservoir_states(flow, os.path.join(args.author1, text_file), args.startup)
+            doc = generate_reservoir_states(converter, flow, os.path.join(text_directory, text_file), args.startup)
+            doc_states = doc
         else:
-            state1 = np.vstack(
-                (state1, generate_reservoir_states(flow, os.path.join(args.author1, text_file), args.startup)))
+            doc = generate_reservoir_states(converter, flow, os.path.join(text_directory, text_file), args.startup)
+            doc_states = np.vstack((doc_states, doc))
         # end if
-        if index == args.nfile:
-            break
-            # end if
+
+        # Indexes
+        doc_indexes.append((pos, doc.shape[0]))
+        pos += doc.shape[0]
     # end for
 
-    # Display reservoir states for author 1
+    return doc_states, doc_indexes
+# end generate_documents_states
+
+
+# Generate plot
+def generate_plot(title, x_label, y_label, data, transpose=False, cmap=None):
+    """
+
+    :param title:
+    :param x_label:
+    :param y_label:
+    :param data:
+    :param transpose:
+    :param cmap:
+    :return:
+    """
     plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
-    plot.add_sub_plot(title=ex_instance + ", Reservoir states for Author 1", x_label="Time", y_label="Neurons")
-    plot.imshow(np.transpose(state1), cmap='Greys')
+    plot.add_sub_plot(title=ex_instance + ", " + title, x_label=x_label, y_label=y_label)
+    if transpose:
+        plot.imshow(np.transpose(data), cmap='Greys')
+    else:
+        plot.imshow(data, cmap='Greys')
+    # end if
     logging.save_plot(plot)
-    print("Dimensions of states for author 1 : " + str(state1.shape))
+# end generate_plot
 
-    # Generate states for second author
-    for index, text_file in enumerate(os.listdir(args.author2)):
-        print("Generating state for author 2 from file %s" % os.path.join(args.author2, text_file))
-        if index == 0:
-            state2 = generate_reservoir_states(flow, os.path.join(args.author2, text_file), args.startup)
-        else:
-            state2 = np.vstack(
-                (state2, generate_reservoir_states(flow, os.path.join(args.author2, text_file), args.startup)))
-        # end if
-        if index == args.nfile:
-            break
-            # end if
-    # end for
 
-    # Display reservoir states for author 2
-    plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
-    plot.add_sub_plot(title=ex_instance + ", Reservoir states for Author 2", x_label="Time", y_label="Neurons")
-    plot.imshow(np.transpose(state2), cmap='Greys')
-    logging.save_plot(plot)
-    print("Dimensions of states for author 2 : " + str(state2.shape))
+# Main function
+def main():
 
-    # Same size for each authors
-    if state1.shape[0] > state2.shape[0]:
-        state1 = state1[:state2.shape[0]]
-        sample_size = state1.shape[0]
-    elif state2.shape[0] > state1.shape[0]:
-        state2 = state2[:state1.shape[0]]
-        sample_size = state2.shape[0]
+    # Convert the text to internal representations
+    if args.converter == "pos":
+        converter = RCNLPPosConverter(resize=args.in_components)
+    elif args.converter == "tag":
+        converter = RCNLPTagConverter(resize=args.in_components)
+    elif args.converter == "fw":
+        converter = RCNLPFuncWordConverter(resize=args.in_components)
+    else:
+        converter = RCNLPWordVectorConverter(resize=args.in_components)
     # end if
 
-    # Join states
-    join_states = np.vstack((state1, state2))
-    plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
-    plot.add_sub_plot(title=ex_instance + ", Joined Reservoir states", x_label="Time", y_label="Neurons")
-    plot.imshow(np.transpose(join_states), cmap='Greys')
-    logging.save_plot(plot)
-    print("Dimensions of joined states : " + str(join_states.shape))
+    # Create an echo state network
+    flow = create_reservoir(converter.get_n_inputs(), rc_word_sparsity, rc_size, rc_input_scaling, rc_leak_rate,
+                            rc_spectral_radius, rc_w_sparsity)
 
-    # PCA
-    pca = PCA(n_components=args.ncomponents)
-    pca.fit(join_states)
+    # Generate "temporal representations" for first author
+    a1_states, a1_index = generate_documents_states(converter, flow, args.author1)
+    generate_plot("Temporal representations for Author 1", "Time", "Neurons", a1_states, transpose=True, cmap='Greys')
 
-    # Generate PCA
-    reduced1 = pca.transform(state1)
-    reduced2 = pca.transform(state2)
+    # Generate "temporal representations" for second author
+    a2_states, a2_index = generate_documents_states(converter, flow, args.author2)
+    generate_plot("Temporal representations for Author 2", "Time", "Neurons", a2_states, transpose=True, cmap='Greys')
 
-    # Generate PCA image for 1th and 2th
-    for c in np.arange(0, 8):
-        save_pca_image(reduced1, reduced2, c, c+1)
-    # end for
+    # Same size for each authors in needed
+    if args.homogene:
+        if a1_states.shape[0] > a2_states.shape[0]:
+            a1_states = a1_states[:a2_states.shape[0]]
+        elif a2_states.shape[0] > a1_states.shape[0]:
+            a2_states = a2_states[:a1_states.shape[0]]
+        # end if
+    # end if
 
-    # Get centroids for the whole components
-    centroids, _ = kmeans(join_states, 2)
+    # Join states.
+    join_states = np.vstack((a1_states, a2_states))
+    generate_plot("Joined Reservoir states", "Time", "Neurons", a2_states, transpose=True, cmap='Greys')
 
-    # Assign each sample to a cluster
-    idx, _ = vq(join_states, centroids)
+    # PCA on all states.
+    if args.out_components != -1:
+        # PCA
+        pca = PCA(n_components=args.out_components)
+        pca.fit(join_states)
 
-    # Compute average state success rate
-    logging.save_results("Average state ratio", get_average_state_success_rate(idx, sample_size), display=True)
+        # Generate PCA
+        a1_states_pca = pca.transform(a1_states)
+        a2_states_pca = pca.transform(a2_states)
+
+        # Generate PCA image of principal components
+        if args.pca_images:
+            for c in np.arange(0, 8):
+                save_pca_image(a1_states_pca, a2_states_pca, c, c+1)
+            # end for
+        # end if
+
+        # Reduce whole states
+        join_states_reduced = pca.transform(join_states)
+
+        # Get centroids for the whole components
+        centroids, _ = kmeans(join_states_reduced, 2)
+
+        # Assign each sample to a cluster
+        a1_idx, _ = vq(a1_states_pca, centroids)
+        a2_idx, _ = vq(a2_states_pca, centroids)
+    else:
+        # Get centroids for the whole components
+        centroids, _ = kmeans(join_states, 2)
+
+        # Assign each sample to a cluster
+        a1_idx, _ = vq(a1_states, centroids)
+        a2_idx, _ = vq(a2_states, centroids)
+    # end if
+
+    # Compute average precision
+    logging.save_results("Average precision", get_average_precision(a1_idx, a2_idx, a1_index, a2_index), display=True)
 
     # Open logging dir
     logging.open_dir()
@@ -300,12 +355,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="RCNLP - Author clustering with Part-Of-Speech to Echo State Network")
 
     # Argument
-    parser.add_argument("--author1", type=str, help="First author text directory")
-    parser.add_argument("--author2", type=str, help="Second author text directory")
-    parser.add_argument("--startup", type=int, help="Number of start-up states to remove")
-    parser.add_argument("--ncomponents", type=int, help="Number of principal component to analyse")
-    parser.add_argument("--nfile", type=int, help="Number of text files to analyze", default=-1)
-    parser.add_argument("--lang", type=str, help="Language (ar, en, es, pt)", default='en')
+    parser.add_argument("--author1", type=str, help="First author text directory.")
+    parser.add_argument("--author2", type=str, help="Second author text directory.")
+    parser.add_argument("--startup", type=int, help="Number of start-up states to remove.", default=20)
+    parser.add_argument("--out-components", type=int, help="Number of principal component to reduce reservoir states.", default=-1)
+    parser.add_argument("--in-components", type=int, help="Number of principal component to reduce inputs.", default=-1)
+    parser.add_argument("--homogene", action='store_true', help="Keep the same number of states for each authors.",
+                        default=False)
+    parser.add_argument("--pca-images", action='store_true', help="Generate image of principal components.",
+                        default=False)
+    parser.add_argument("--converter", type=str, help="The text converter to use (fw, pos, tag, wv).")
+    parser.add_argument("--lang", type=str, help="Language model", default='en')
     args = parser.parse_args()
 
     # Logging

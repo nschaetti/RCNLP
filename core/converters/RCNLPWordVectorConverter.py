@@ -29,18 +29,18 @@ from RCNLPConverter import RCNLPConverter
 
 
 class RCNLPWordVectorConverter(RCNLPConverter):
+    """
+    Convert text to word vectors.
+    """
 
-    # Constructor
-    def __init__(self, lang='en', resize=300):
+    # Get the number of inputs
+    def get_n_inputs(self):
         """
-        Constructor
-        :param lang:
-        :param resize:
+        Get the input size.
+        :return: The input size.
         """
-        # Base class
-        super(RCNLPWordVectorConverter, self).__init__(lang=lang)
-        self._resize = resize
-    # end __init__
+        return 300
+    # end get_n_inputs
 
     # Convert a string to a ESN input
     def __call__(self, text, exclude=list(), word_exclude=list()):
@@ -59,12 +59,10 @@ class RCNLPWordVectorConverter(RCNLPConverter):
         # Resulting numpy array
         doc_array = np.array([])
 
+        # For each token
         for index, word in enumerate(doc):
             if word not in exclude:
                 word_vector = word.vector
-                if self._resize != 300:
-                    word_vector = sig.resample(word_vector, self._resize)
-                # end if
                 if index == 0:
                     doc_array = word_vector
                 else:
@@ -72,7 +70,8 @@ class RCNLPWordVectorConverter(RCNLPConverter):
                 # end if
             # end if
         # end for
-        return doc_array
+
+        return self.reduce(doc_array)
     # end convert
 
 # end RCNLPConverter

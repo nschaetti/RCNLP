@@ -25,28 +25,119 @@
 # Imports
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
 
 class RCNLPConverter(object):
+    """
+    Base class for converters.
+    """
 
     # Constructor
-    def __init__(self, lang='en'):
+    def __init__(self, lang='en', tag_to_symbol=None, resize=-1):
         """
-        Constructor.
-        :param lang:
+        Constructor
+        :param lang: Language model
+        :param tag_to_symbol: Tag to symbol conversion array.
+        :param resize: Reduce dimensionality.
         """
+        # Properties
+        self._resize = resize
         self._lang = lang
+
+        # Generate tag symbols
+        if tag_to_symbol is None:
+            self._symbols = self.generate_symbols()
+        else:
+            self._symbols = tag_to_symbol
+            # end if
     # end __init__
 
     # Convert a string to a ESN input
     def __call__(self, text, exclude=list(), word_exclude=list()):
         """
         Convert a string to a ESN input
-        :param text: The text to convert.
-        :return: An numpy array of inputs.
+        :param text: Text to convert.
+        :param exclude: List of tags to exclude.
+        :param word_exclude: List of words to exclude.
+        :return: A list of symbols.
         """
         pass
     # end convert
+
+    # Generate symbols
+    def generate_symbols(self):
+        """
+        Generate word symbols.
+        :return: Dictionary of tag to symbols.
+        """
+        result = dict()
+        n_words = len(self.get_tags())
+        for index, p in enumerate(self.get_tags()):
+            result[p] = np.zeros(n_words)
+            result[p][index] = 1.0
+        # end for
+        return result
+    # end generate_symbols
+
+    # Get symbol from tag
+    def tag_to_symbol(self, tag):
+        """
+        Get symbol from tag.
+        :param tag: Tag.
+        :return: The corresponding symbols.
+        """
+        if tag in self._symbols.keys():
+            return self._symbols[tag]
+        return None
+    # end word_to_symbol
+
+    # Get inputs size
+    def _get_inputs_size(self):
+        """
+        Get inputs size.
+        :return:
+        """
+        return 0
+    # end if
+
+    # Get the number of inputs
+    def get_n_inputs(self):
+        """
+        Get the number of inputs.
+        :return: The input size.
+        """
+        if self._resize != -1:
+            return self._resize
+        else:
+            return self._get_inputs_size()
+        # end if
+    # end get_n_inputs
+
+    # Get tags
+    def get_tags(self):
+        """
+        Get tags.
+        :return:
+        """
+        return []
+    # end get_tags
+
+    # Reduce the inputs
+    def reduce(self, x):
+        """
+        Reduce the inputs.
+        :param x: The signal to reduce.
+        :return: The reduce signal.
+        """
+        if self._resize != -1:
+            # PCA
+            pca = PCA(n_components=self._resize)
+            pca.fit(x)
+            return pca.transform(x)
+        # end if
+        return x
+    # end reduce
 
     # Display representations
     @staticmethod

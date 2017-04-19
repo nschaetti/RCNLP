@@ -28,7 +28,7 @@ import argparse
 import Oger
 import numpy as np
 from sklearn.decomposition import PCA
-from core.converters.RCNLPPosConverter import RCNLPPosConverter
+from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
 from core.tools.RCNLPLogging import RCNLPLogging
 from core.nodes.RCNLPWordReservoirNode import RCNLPWordReservoirNode
 from core.tools.RCNLPPlotGenerator import RCNLPPlotGenerator
@@ -45,16 +45,15 @@ from skimage.draw import circle
 #########################################################################
 
 # Exp. info
-ex_name = "Author clustering Experience"
+ex_name = "Author clustering with Words Vectors Experience"
 ex_instance = "Author clustering, PCA"
 
 # Reservoir Properties
-a_leak_rate = np.arange(0.05, 1.0, 0.1)  # Leak rate
-rc_leak_rate = "0.05-1.0"
-rc_input_scaling = 0.5  # Input scaling
-rc_size = 100  # Reservoir size
+rc_leak_rate = 0.2  # Leak rate
+rc_input_scaling = 0.01  # Input scaling
+rc_size = 1200  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
-rc_word_sparsity = 0.5
+rc_word_sparsity = 0.25
 rc_w_sparsity = 0.1
 
 # Data set properties
@@ -69,6 +68,7 @@ ds_sparsity = 0  # Number of samples with no switching
 ####################################################
 # Function
 ####################################################
+
 
 # Create a reservoir
 def create_reservoir(n_symbols, word_sparsity, size, input_scaling, leak_rate, spectral_radius, w_sparsity):
@@ -95,9 +95,9 @@ def create_reservoir(n_symbols, word_sparsity, size, input_scaling, leak_rate, s
 
 
 # Generate reservoir states
-def generate_reservoir_states(the_flow, filename, remove_startup=0):
+def generate_reservoir_states(the_flow, filename, resize, remove_startup=0):
     # Convert the text to Temporal Vector Representation
-    converter = RCNLPPosConverter()
+    converter = RCNLPWordVectorConverter(resize=resize)
     doc_array = converter(io.open(filename, 'r').read())
 
     # Generate the reservoir state
@@ -200,35 +200,52 @@ def get_average_state_success_rate(idx, sample_size):
 # end get_average_state_success_rate
 
 
-def main(word_sparsity, size, input_scaling, leak_rate, spectral_radius, w_sparsity):
+def main():
     # Create a reservoir
-    flow = create_reservoir(14, word_sparsity, size, input_scaling, leak_rate, spectral_radius, w_sparsity)
+    flow = create_reservoir(args.resize, rc_word_sparsity, rc_size, rc_input_scaling, rc_leak_rate,
+                            rc_spectral_radius, rc_w_sparsity)
 
     # Generate states for first author
     for index, text_file in enumerate(os.listdir(args.author1)):
+        print("Generating state for author 1 from file %s" % os.path.join(args.author1, text_file))
         if index == 0:
-            state1 = generate_reservoir_states(flow, os.path.join(args.author1, text_file), args.startup)
+            state1 = generate_reservoir_states(flow, os.path.join(args.author1, text_file), args.resize, args.startup)
         else:
             state1 = np.vstack(
-                (state1, generate_reservoir_states(flow, os.path.join(args.author1, text_file), args.startup)))
+                (state1, generate_reservoir_states(flow, os.path.join(args.author1, text_file), args.resize, args.startup)))
         # end if
         if index == args.nfile:
             break
             # end if
     # end for
 
+    # Display reservoir states for author 1
+    plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
+    plot.add_sub_plot(title=ex_instance + ", Reservoir states for Author 1", x_label="Time", y_label="Neurons")
+    plot.imshow(np.transpose(state1), cmap='Greys')
+    logging.save_plot(plot)
+    print("Dimensions of states for author 1 : " + str(state1.shape))
+
     # Generate states for second author
     for index, text_file in enumerate(os.listdir(args.author2)):
+        print("Generating state for author 2 from file %s" % os.path.join(args.author2, text_file))
         if index == 0:
-            state2 = generate_reservoir_states(flow, os.path.join(args.author2, text_file), args.startup)
+            state2 = generate_reservoir_states(flow, os.path.join(args.author2, text_file), args.resize, args.startup)
         else:
             state2 = np.vstack(
-                (state2, generate_reservoir_states(flow, os.path.join(args.author2, text_file), args.startup)))
+                (state2, generate_reservoir_states(flow, os.path.join(args.author2, text_file), args.resize, args.startup)))
         # end if
         if index == args.nfile:
             break
             # end if
     # end for
+
+    # Display reservoir states for author 2
+    plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
+    plot.add_sub_plot(title=ex_instance + ", Reservoir states for Author 2", x_label="Time", y_label="Neurons")
+    plot.imshow(np.transpose(state2), cmap='Greys')
+    logging.save_plot(plot)
+    print("Dimensions of states for author 2 : " + str(state2.shape))
 
     # Same size for each authors
     if state1.shape[0] > state2.shape[0]:
@@ -241,16 +258,43 @@ def main(word_sparsity, size, input_scaling, leak_rate, spectral_radius, w_spars
 
     # Join states
     join_states = np.vstack((state1, state2))
+    plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
+    plot.add_sub_plot(title=ex_instance + ", Joined Reservoir states", x_label="Time", y_label="Neurons")
+    plot.imshow(np.transpose(join_states), cmap='Greys')
+    logging.save_plot(plot)
+    print("Dimensions of joined states : " + str(join_states.shape))
 
-    # Get centroids for the whole components
+    # PCA
+    pca = PCA(n_components=args.ncomponents)
+    pca.fit(join_states)
+
+    # Generate PCA
+    reduced1 = pca.transform(state1)
+    reduced2 = pca.transform(state2)
+    treduced = pca.transform(join_states)
+
+    # Generate PCA image for 1th and 2th
+    for c in np.arange(0, 8):
+        save_pca_image(reduced1, reduced2, c, c+1)
+    # end for
+
+    # Get centroids for the whole states and for components 1 and 2
     centroids, _ = kmeans(join_states, 2)
+    rcentroids12, _ = kmeans(treduced[:, 0:2], 2)
+    rcentroids15, _ = kmeans(treduced[:, 0:5], 2)
 
     # Assign each sample to a cluster
     idx, _ = vq(join_states, centroids)
+    ridx12, _ = vq(treduced[:, 0:2], rcentroids12)
+    ridx15, _ = vq(treduced[:, 0:5], rcentroids15)
 
     # Compute average state success rate
     logging.save_results("Average state ratio", get_average_state_success_rate(idx, sample_size), display=True)
-    return get_average_state_success_rate(idx, sample_size)
+    logging.save_results("PCA12 Average state ratio", get_average_state_success_rate(ridx12, sample_size), display=True)
+    logging.save_results("PCA15 Average state ratio", get_average_state_success_rate(ridx15, sample_size), display=True)
+
+    # Open logging dir
+    logging.open_dir()
 # end main
 
 ####################################################
@@ -260,13 +304,14 @@ def main(word_sparsity, size, input_scaling, leak_rate, spectral_radius, w_spars
 if __name__ == "__main__":
 
     # Argument parser
-    parser = argparse.ArgumentParser(description="RCNLP - Author clustering with Part-Of-Speech to Echo State Network")
+    parser = argparse.ArgumentParser(description="RCNLP - Author clustering with Word Vectors to Echo State Network")
 
     # Argument
     parser.add_argument("--author1", type=str, help="First author text directory")
     parser.add_argument("--author2", type=str, help="Second author text directory")
     parser.add_argument("--startup", type=int, help="Number of start-up states to remove")
     parser.add_argument("--ncomponents", type=int, help="Number of principal component to analyse")
+    parser.add_argument("--resize", type=int, help="Resize the word vectors", default=300)
     parser.add_argument("--nfile", type=int, help="Number of text files to analyze", default=-1)
     parser.add_argument("--lang", type=str, help="Language (ar, en, es, pt)", default='en')
     args = parser.parse_args()
@@ -278,21 +323,6 @@ if __name__ == "__main__":
     logging.save_variables(locals())
 
     # Main
-    results = []
-    for leak_rate in a_leak_rate:
-        print("Computing average state ratio for leak rate = %f" % leak_rate)
-        results += [main(word_sparsity=rc_word_sparsity, size=rc_size, input_scaling=rc_input_scaling,
-                         leak_rate=leak_rate, spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)]
-    # end for
-
-    # Plot pred and bos
-    plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
-    plot.add_sub_plot(title=ex_instance + ", explore leak rate", x_label="Leak rate", y_label="Average state ratio")
-    plot.plot(x=a_leak_rate, y=results, label="Average state ratio", subplot=1)
-    plot.add_hline(value=50, length=53622, subplot=1)
-    logging.save_plot(plot)
-
-    # Open logging dir
-    logging.open_dir()
+    main()
 
 # end if
