@@ -34,7 +34,7 @@ class RCNLPConverter(object):
     """
 
     # Constructor
-    def __init__(self, lang='en', tag_to_symbol=None, resize=-1):
+    def __init__(self, lang='en', tag_to_symbol=None, resize=-1, pca_model=None):
         """
         Constructor
         :param lang: Language model
@@ -44,6 +44,7 @@ class RCNLPConverter(object):
         # Properties
         self._resize = resize
         self._lang = lang
+        self._pca_model = pca_model
 
         # Generate tag symbols
         if tag_to_symbol is None:
@@ -107,7 +108,9 @@ class RCNLPConverter(object):
         Get the number of inputs.
         :return: The input size.
         """
-        if self._resize != -1:
+        if self._pca_model is not None:
+            return self._pca_model.n_components_
+        elif self._resize != -1:
             return self._resize
         else:
             return self._get_inputs_size()
@@ -130,7 +133,9 @@ class RCNLPConverter(object):
         :param x: The signal to reduce.
         :return: The reduce signal.
         """
-        if self._resize != -1:
+        if self._pca_model is not None:
+            return self._pca_model.transform(x)
+        elif self._resize != -1:
             # PCA
             pca = PCA(n_components=self._resize)
             pca.fit(x)
@@ -171,7 +176,7 @@ class RCNLPConverter(object):
         # Output
         outputs = np.repeat(author_vector, n_reps, axis=0)
 
-        return zip(reps, outputs)
+        return reps, outputs
     # end generate_data_set_inputs
 
 # end RCNLPConverter

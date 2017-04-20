@@ -122,6 +122,9 @@ class RCNLPPlotGenerator(object):
 
         # Save plot
         self._fig.savefig(filename)
+
+        # Close plot
+        plt.close()
     # end save_image
 
     # Show the current plot

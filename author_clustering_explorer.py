@@ -27,6 +27,7 @@ from core.tools.RCNLPLogging import RCNLPLogging
 import core.clustering.functions as cf
 import numpy as np
 import os
+from core.tools.RCNLPPlotGenerator import RCNLPPlotGenerator
 from scipy.stats import ttest_1samp
 import pickle
 
@@ -38,15 +39,16 @@ import pickle
 
 # Exp. info
 ex_name = "Author clustering Experience"
-ex_instance = "Author clustering, PCA"
+ex_instance = "Author clustering Explorer"
 
 # Reservoir Properties
-rc_leak_rate = 0.5  # Leak rate
-rc_input_scaling = 0.25  # Input scaling
-rc_size = 500  # Reservoir size
+a_leak_rate = np.arange(0.05, 1.05, 0.1)
+rc_leak_rate = "0.05-1.0"  # Leak rate
+rc_input_scaling = 1.0  # Input scaling
+rc_size = 100  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
-rc_input_sparsity = 0.01
+rc_input_sparsity = 0.5
 
 ####################################################
 # Main function
@@ -60,7 +62,8 @@ if __name__ == "__main__":
     # Argument
     parser.add_argument("--texts", type=str, help="Text directory.")
     parser.add_argument("--startup", type=int, help="Number of start-up states to remove.", default=20)
-    parser.add_argument("--out-components", type=int, help="Number of principal component to reduce reservoir states.", default=-1)
+    parser.add_argument("--out-components", type=int, help="Number of principal component to reduce reservoir states.",
+                        default=-1)
     parser.add_argument("--in-components", type=int, help="Number of principal component to reduce inputs.", default=-1)
     parser.add_argument("--homogene", action='store_true', help="Keep the same number of states for each authors.",
                         default=False)
@@ -85,41 +88,50 @@ if __name__ == "__main__":
         pca_model = pickle.load(open(args.pca_model, 'r'))
     # end if
 
-    # Results
-    state_results = np.array([])
-    doc_results = np.array([])
+    # Results to analyze
+    explore_results = np.array([])
+    explore_deviation = np.array([])
+    explore_t_test = np.array([])
 
     # Iterate
-    for i in np.arange(0, args.samples):
-        print("Round %d" % i)
-        authors_id = np.random.choice(49, 2, replace=False) + 1
-        texts1 = os.path.join(args.texts, str(authors_id[0]))
-        texts2 = os.path.join(args.texts, str(authors_id[1]))
-        state_score, doc_score = cf.clustering_states(args=args, texts1=texts1, texts2=texts2, ex_name=ex_name,
-                                                      ex_instance=ex_instance, input_scaling=rc_input_scaling,
-                                                      input_sparsity=rc_input_sparsity, leak_rate=rc_leak_rate,
-                                                      logging=logging, size=rc_size, spectral_radius=rc_spectral_radius,
-                                                      w_sparsity=rc_w_sparsity, save_graph=True if i == 0 else False,
-                                                      pca_model=pca_model)
+    for leak_rate in a_leak_rate:
+        print("Evaluating performances for leak rate %f" % leak_rate)
+        # Iterate
+        results = np.array([])
+        for i in np.arange(0, args.samples):
+            authors_id = np.random.choice(49, 2, replace=False) + 1
+            texts1 = os.path.join(args.texts, str(authors_id[0]))
+            texts2 = os.path.join(args.texts, str(authors_id[1]))
+            average_precision = cf.clustering_states(args=args, texts1=texts1, texts2=texts2, ex_name=ex_name,
+                                                     ex_instance=ex_instance, input_scaling=rc_input_scaling,
+                                                     input_sparsity=rc_input_sparsity, leak_rate=leak_rate,
+                                                     logging=logging, size=rc_size, spectral_radius=rc_spectral_radius,
+                                                     w_sparsity=rc_w_sparsity, save_graph=True if i == 0 else False,
+                                                     pca_model=pca_model)
+            logging.save_results("Precision 1 round " + str(i), average_precision[0], display=True)
+            logging.save_results("Precision 2 round " + str(i), average_precision[1], display=True)
+            results = np.append(results, average_precision[0])
+            results = np.append(results, average_precision[1])
+        # end for
 
-        # Log results
-        logging.save_results("V state score " + str(i), state_score, display=True)
-        logging.save_results("V doc score " + str(i), doc_score, display=True)
+        # Log
+        logging.save_results("Overall average precision", np.average(results), display=True)
+        logging.save_results("Overall std precision", np.std(results), display=True)
+        logging.save_results("T-test", ttest_1samp(results, 50.0) * 100.0, display=True)
 
-        # Save results
-        state_results = np.append(state_results, state_score)
-        doc_results = np.append(doc_results, doc_score)
+        # Save
+        explore_results = np.append(explore_results, np.average(results))
+        explore_deviation = np.append(explore_deviation, np.std(results))
+        explore_t_test = np.append(explore_t_test, ttest_1samp(results, 50.0) * 100.0)
     # end for
 
-    # Log overall state results
-    logging.save_results("Overall state score", np.average(state_results), display=True)
-    logging.save_results("Overall state score std", np.std(state_results), display=True)
-    logging.save_results("State score T-test", ttest_1samp(state_results, 0).pvalue * 100.0, display=True)
-
-    # Log overall doc results
-    logging.save_results("Overall doc score", np.average(doc_results), display=True)
-    logging.save_results("Overall doc score std", np.std(doc_results), display=True)
-    logging.save_results("Doc score T-test", ttest_1samp(doc_results, 0).pvalue * 100.0, display=True)
+    # First subplot
+    plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
+    plot.add_sub_plot(title="Explorer", x_label="Leak rate", y_label="Precision", ylim=[0, 100], xlim=[0.0, 1.0])
+    plot.plot(y=explore_results, x=a_leak_rate, yerr=explore_deviation, label="Precision", subplot=1, marker='o', color='b')
+    plot.plot(y=explore_t_test, x=a_leak_rate, label="T-Test", subplot=1, marker='o', color='r')
+    plot.add_hline(value=50, length=len(a_leak_rate), subplot=1)
+    logging.save_plot(plot)
 
     # Open logging dir
     logging.open_dir()

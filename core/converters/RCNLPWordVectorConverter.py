@@ -34,7 +34,7 @@ class RCNLPWordVectorConverter(RCNLPConverter):
     """
 
     # Get the number of inputs
-    def get_n_inputs(self):
+    def _get_inputs_size(self):
         """
         Get the input size.
         :return: The input size.
