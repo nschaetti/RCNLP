@@ -37,9 +37,7 @@ from core.classifiers.RCNLPEchoWordClassifier import RCNLPEchoWordClassifier
 from core.tools.RCNLPLogging import RCNLPLogging
 
 #########################################################################
-#
 # Experience settings
-#
 #########################################################################
 
 # Exp. info
@@ -133,7 +131,7 @@ if __name__ == "__main__":
         # end for
 
         # >> 8. Train model
-        print("Training model with text files from %s" % os.path.join(args.dataset, "train"))
+        print("Training model with text files from %s" % os.path.join(args.dataset, "total"))
         classifier.train()
 
         # >> 9. Test model performance
