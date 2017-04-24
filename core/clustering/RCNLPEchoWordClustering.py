@@ -165,7 +165,7 @@ class RCNLPEchoWordClustering(object):
             return True
         else:
             return False
-            # end if
+        # end if
     # end pred
 
     # Predict if two texts are from the same author.
