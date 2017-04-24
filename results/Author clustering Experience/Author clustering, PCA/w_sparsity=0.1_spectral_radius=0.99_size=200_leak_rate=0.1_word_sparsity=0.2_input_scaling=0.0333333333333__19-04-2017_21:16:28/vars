@@ -1,0 +1,88 @@
+rc_w_sparsity : 0.1
+
+rc_spectral_radius : 0.99
+
+Oger : <module 'Oger' from '/usr/local/lib/python2.7/dist-packages/Oger/__init__.pyc'>
+
+generate_plot : <function generate_plot at 0x7f5d030410c8>
+
+parser : ArgumentParser(prog='author_clustering_with_pos.py', usage=None, description='RCNLP - Author clustering with Part-Of-Speech to Echo State Network', version=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+
+generate_pca_image : <function generate_pca_image at 0x7f5d0303bd70>
+
+kmeans : <function kmeans at 0x7f5d0300e500>
+
+vq : <function vq at 0x7f5d0300e2a8>
+
+io : <module 'io' from '/usr/lib/python2.7/io.pyc'>
+
+mdp : <module 'mdp' from '/usr/lib/python2.7/dist-packages/mdp/__init__.pyc'>
+
+PCA : <class 'sklearn.decomposition.pca.PCA'>
+
+rc_size : 200
+
+rc_leak_rate : 0.1
+
+ex_name : Author clustering Experience
+
+__package__ : None
+
+ex_instance : Author clustering, PCA
+
+RCNLPWordReservoirNode : <class 'core.nodes.RCNLPWordReservoirNode.RCNLPWordReservoirNode'>
+
+save_pca_image : <function save_pca_image at 0x7f5d0303bde8>
+
+np : <module 'numpy' from '/home/schaetti/.local/lib/python2.7/site-packages/numpy/__init__.pyc'>
+
+circle : <function circle at 0x7f5d0303baa0>
+
+main : <function main at 0x7f5d03041140>
+
+RCNLPWordVectorConverter : <class 'core.converters.RCNLPWordVectorConverter.RCNLPWordVectorConverter'>
+
+__doc__ : None
+
+generate_documents_states : <function generate_documents_states at 0x7f5d03041050>
+
+plt : <module 'matplotlib.pyplot' from '/usr/lib/python2.7/dist-packages/matplotlib/pyplot.pyc'>
+
+__builtins__ : <module '__builtin__' (built-in)>
+
+__file__ : author_clustering_with_pos.py
+
+args : Namespace(author1='/home/schaetti/Projets/TURING/Datasets/ReutersDataset/C50total/1/', author2='/home/schaetti/Projets/TURING/Datasets/ReutersDataset/C50total/2/', converter='pos', homogene=False, in_components=12, lang='en', out_components=-1, pca_images=False, startup=50)
+
+RCNLPTagConverter : <class 'core.converters.RCNLPTagConverter.RCNLPTagConverter'>
+
+create_reservoir : <function create_reservoir at 0x7f5d0303bcf8>
+
+generate_reservoir_states : <function generate_reservoir_states at 0x7f5d0303bf50>
+
+RCNLPLogging : <class 'core.tools.RCNLPLogging.RCNLPLogging'>
+
+RCNLPPlotGenerator : <class 'core.tools.RCNLPPlotGenerator.RCNLPPlotGenerator'>
+
+RCNLPPosConverter : <class 'core.converters.RCNLPPosConverter.RCNLPPosConverter'>
+
+__name__ : __main__
+
+RCNLPFuncWordConverter : <class 'core.converters.RCNLPFuncWordConverter.RCNLPFuncWordConverter'>
+
+rc_word_sparsity : 0.2
+
+argparse : <module 'argparse' from '/usr/lib/python2.7/argparse.pyc'>
+
+logging : <core.tools.RCNLPLogging.RCNLPLogging object at 0x7f5d03048650>
+
+get_average_precision : <function get_average_precision at 0x7f5d0303bed8>
+
+time : <module 'time' (built-in)>
+
+get_average_state_success_rate : <function get_average_state_success_rate at 0x7f5d0303be60>
+
+rc_input_scaling : 0.0333333333333
+
+os : <module 'os' from '/usr/lib/python2.7/os.pyc'>
+

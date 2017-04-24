@@ -1,0 +1,60 @@
+Oger : <module 'Oger' from '/usr/local/lib/python2.7/dist-packages/Oger/__init__.pyc'>
+
+parser : ArgumentParser(prog='pca_reduction.py', usage=None, description='RCNLP - Author clustering with Part-Of-Speech to Echo State Network', version=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+
+kmeans : <function kmeans at 0x7f3e5057a410>
+
+vq : <function vq at 0x7f3e5057a1b8>
+
+io : <module 'io' from '/usr/lib/python2.7/io.pyc'>
+
+mdp : <module 'mdp' from '/usr/lib/python2.7/dist-packages/mdp/__init__.pyc'>
+
+PCA : <class 'sklearn.decomposition.pca.PCA'>
+
+pca_reduction : <function pca_reduction at 0x7f3e505a7c08>
+
+ex_name : PCA inputs reduction
+
+__package__ : None
+
+ex_instance : PCA
+
+RCNLPWordReservoirNode : <class 'core.nodes.RCNLPWordReservoirNode.RCNLPWordReservoirNode'>
+
+np : <module 'numpy' from '/home/schaetti/.local/lib/python2.7/site-packages/numpy/__init__.pyc'>
+
+circle : <function circle at 0x7f3e505a79b0>
+
+RCNLPWordVectorConverter : <class 'core.converters.RCNLPWordVectorConverter.RCNLPWordVectorConverter'>
+
+__doc__ : None
+
+plt : <module 'matplotlib.pyplot' from '/usr/lib/python2.7/dist-packages/matplotlib/pyplot.pyc'>
+
+__builtins__ : <module '__builtin__' (built-in)>
+
+__file__ : pca_reduction.py
+
+args : Namespace(lang='en', ncomponents=10, nfile=-1, text='/home/schaetti/Projets/TURING/Datasets/ReutersDataset/C50total/AaronPressman/106247newsML.txt')
+
+RCNLPTagConverter : <class 'core.converters.RCNLPTagConverter.RCNLPTagConverter'>
+
+RCNLPLogging : <class 'core.tools.RCNLPLogging.RCNLPLogging'>
+
+RCNLPPlotGenerator : <class 'core.tools.RCNLPPlotGenerator.RCNLPPlotGenerator'>
+
+RCNLPPosConverter : <class 'core.converters.RCNLPPosConverter.RCNLPPosConverter'>
+
+__name__ : __main__
+
+RCNLPFuncWordConverter : <class 'core.converters.RCNLPFuncWordConverter.RCNLPFuncWordConverter'>
+
+argparse : <module 'argparse' from '/usr/lib/python2.7/argparse.pyc'>
+
+logging : <core.tools.RCNLPLogging.RCNLPLogging object at 0x7f3e505a8e50>
+
+time : <module 'time' (built-in)>
+
+os : <module 'os' from '/usr/lib/python2.7/os.pyc'>
+

@@ -27,6 +27,7 @@ import os
 import argparse
 import matplotlib.pyplot as plt
 import pickle
+import numpy as np
 import Oger
 from core.converters.RCNLPPosConverter import RCNLPPosConverter
 from core.converters.RCNLPTagConverter import RCNLPTagConverter
@@ -46,12 +47,12 @@ ex_name = "Authorship Attribution Experience"
 ex_instance = "Author Attribution"
 
 # Reservoir Properties
-rc_leak_rate = 0.5  # Leak rate
+rc_leak_rate = 0.1  # Leak rate
 rc_input_scaling = 0.25  # Input scaling
-rc_size = 500  # Reservoir size
+rc_size = 100  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
-rc_input_sparsity = 0.01
+rc_input_sparsity = 0.1
 
 ####################################################
 # Main function
@@ -72,6 +73,7 @@ if __name__ == "__main__":
     parser.add_argument("--pca-model", type=str, help="PCA model to load", default=None)
     parser.add_argument("--in-components", type=int, help="Number of principal component to reduce inputs to.",
                         default=-1)
+    parser.add_argument("--k", type=int, help="n-Fold Cross Validation.", default=10)
     args = parser.parse_args()
 
     # Logging
@@ -97,39 +99,75 @@ if __name__ == "__main__":
         converter = RCNLPWordVectorConverter(resize=args.in_components, pca_model=pca_model)
     # end if
 
-    # >> 2. Create Echo Word Classifier
-    classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
-                                         input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
-                                         spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
+    # >> 2. Prepare training and test set indexes.
+    n_fold_samples = int(100 / args.k)
+    indexes = np.arange(0, 100, 1)
+    indexes.shape = (args.k, n_fold_samples)
 
-    # >> 3. Add examples
-    for author_index, author_id in enumerate((args.author1, args.author2)):
-        author_path = os.path.join(args.dataset, "train", author_id)
-        # Generate states for first author
-        for index, author_file in enumerate(os.listdir(author_path)):
-            classifier.add_example(os.path.join(author_path, author_file), author_index)
+    # >> 3. Array for results
+    average_success_rate = np.array([])
+
+    # >> 4. n-Fold cross validation
+    for k in range(0, args.k):
+        print("%d-Fold" % k)
+
+        # >> 5. Prepare training and test set.
+        test_set_indexes = indexes[k]
+        training_set_indexes = indexes
+        training_set_indexes = np.delete(training_set_indexes, k, axis=0)
+        training_set_indexes.shape = (100 - n_fold_samples)
+
+        # >> 6. Create Echo Word Classifier
+        classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
+                                             input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
+                                             spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
+
+        # >> 7. Add examples
+        print(training_set_indexes)
+        for author_index, author_id in enumerate((args.author1, args.author2)):
+            author_path = os.path.join(args.dataset, "total", author_id)
+            print("Adding %d examples for author from %s" % (training_set_indexes.shape[0], author_path))
+            for file_index in training_set_indexes:
+                classifier.add_example(os.path.join(author_path, str(file_index) + ".txt"), author_index)
+            # end for
         # end for
+
+        # >> 8. Train model
+        print("Training model with text files from %s" % os.path.join(args.dataset, "train"))
+        classifier.train()
+
+        # >> 9. Test model performance
+        print("Testing model performances with text files from %s..." % os.path.join(args.dataset, "total"))
+        print(test_set_indexes)
+        success = 0.0
+        count = 0.0
+        for author_index, author_id in enumerate((args.author1, args.author2)):
+            author_path = os.path.join(args.dataset, "total", author_id)
+            print("Testing model performances with %d text files for author from %s..." % (test_set_indexes.shape[0],
+                                                                                           author_path))
+            for file_index in test_set_indexes:
+                author_pred = classifier.pred(os.path.join(author_path, str(file_index) + ".txt"))
+                if author_pred == author_index:
+                    success += 1.0
+                # end if
+                count += 1.0
+            # end for
+        # end for
+
+        # >> 10. Log success
+        logging.save_results("Number of file in test set ", count, display=True)
+        logging.save_results("Number of success ", success, display=True)
+        logging.save_results("Success rate ", (success / count) * 100.0, display=True)
+
+        # >> 11. Save results
+        average_success_rate = np.append(average_success_rate, [(success / count) * 100.0])
+
+        # Delete variables
+        del classifier
     # end for
 
-    # >> 4. Train model
-    print("Training the model...")
-    classifier.train()
-    exit()
-    # >> 5. Test model performance
-    print("Testing model performances...")
-    success = 0.0
-    for author_index, author_id in enumerate(args.author1, args.author2):
-        author_path = os.path.join(args.dataset, "test", author_id)
-        # Generate states for first author
-        for index, author_file in enumerate(os.listdir(author_path)):
-            author_pred = classifier.pred(os.path.join(author_path, author_file))
-            if author_pred == author_index:
-                success += 1.0
-            # end if
-        # end for
-    # end for
-
-    # >> 6. Log success
-    logging.save_results("Average success rate ", success, display=True)
+    # Log results
+    logging.save_results("Average success rate ", np.average(average_success_rate), display=True)
+    logging.save_results("Success rate std ", np.std(average_success_rate), display=True)
 
 # end if

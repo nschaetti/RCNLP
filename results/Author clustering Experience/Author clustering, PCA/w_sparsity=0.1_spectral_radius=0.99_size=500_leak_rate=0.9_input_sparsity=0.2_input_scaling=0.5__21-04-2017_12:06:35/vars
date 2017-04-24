@@ -1,0 +1,46 @@
+ttest_1samp : <function ttest_1samp at 0x7fea8ea7db90>
+
+rc_w_sparsity : 0.1
+
+rc_spectral_radius : 0.99
+
+parser : ArgumentParser(prog='author_clustering.py', usage=None, description='RCNLP - Author clustering with Part-Of-Speech to Echo State Network', version=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+
+cf : <module 'core.clustering.functions' from '/home/schaetti/Projets/TURING/Recherches/MLE/ReservoirComputing/RCNLP/core/clustering/functions.pyc'>
+
+rc_size : 500
+
+rc_leak_rate : 0.9
+
+ex_name : Author clustering Experience
+
+__package__ : None
+
+__builtins__ : <module '__builtin__' (built-in)>
+
+np : <module 'numpy' from '/home/schaetti/.local/lib/python2.7/site-packages/numpy/__init__.pyc'>
+
+__doc__ : None
+
+ex_instance : Author clustering, PCA
+
+__file__ : author_clustering.py
+
+args : Namespace(converter='wv', homogene=True, in_components=-1, lang='en', out_components=-1, pca_images=False, pca_model='models/pca_vw_60.p', samples=10, show_states=500, startup=10, texts='/home/schaetti/Projets/TURING/Datasets/ReutersDataset/total/')
+
+rc_input_sparsity : 0.2
+
+RCNLPLogging : <class 'core.tools.RCNLPLogging.RCNLPLogging'>
+
+__name__ : __main__
+
+argparse : <module 'argparse' from '/usr/lib/python2.7/argparse.pyc'>
+
+logging : <core.tools.RCNLPLogging.RCNLPLogging object at 0x7fea7b1f9a10>
+
+os : <module 'os' from '/usr/lib/python2.7/os.pyc'>
+
+rc_input_scaling : 0.5
+
+pickle : <module 'pickle' from '/usr/lib/python2.7/pickle.pyc'>
+

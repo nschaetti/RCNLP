@@ -1,0 +1,92 @@
+Average neural activations : 0.00465257899706
+
+Std dev of neural activations : 0.0615476372071
+
+V state score 0 : 0.448565876334
+
+V doc score 0 : 0.735609822905
+
+Average neural activations : -0.00140716431702
+
+Std dev of neural activations : 0.0591858270089
+
+V state score 1 : 0.26658647086
+
+V doc score 1 : 0.474863473016
+
+Average neural activations : 0.0149875928711
+
+Std dev of neural activations : 0.0569869441273
+
+V state score 2 : 0.00424220095707
+
+V doc score 2 : 0.252507747382
+
+Average neural activations : 0.00625819539862
+
+Std dev of neural activations : 0.0593374220808
+
+V state score 3 : 0.241917644685
+
+V doc score 3 : 0.431472336783
+
+Average neural activations : -0.0147184475933
+
+Std dev of neural activations : 0.0570762853526
+
+V state score 4 : 0.00109439571844
+
+V doc score 4 : 0.0096002560948
+
+Average neural activations : -0.0182629002191
+
+Std dev of neural activations : 0.0604497072002
+
+V state score 5 : 0.191863499936
+
+V doc score 5 : 0.38247571901
+
+Average neural activations : -0.0019834413891
+
+Std dev of neural activations : 0.0572857534823
+
+V state score 6 : 0.0308170490519
+
+V doc score 6 : 0.398133802849
+
+Average neural activations : -0.0214296134221
+
+Std dev of neural activations : 0.0576098196658
+
+V state score 7 : 0.00110505174848
+
+V doc score 7 : 0.0735790825254
+
+Average neural activations : -0.0113587610798
+
+Std dev of neural activations : 0.058076951988
+
+V state score 8 : 0.000344433531755
+
+V doc score 8 : 0.00398865702641
+
+Average neural activations : -0.0171429473836
+
+Std dev of neural activations : 0.0606463335828
+
+V state score 9 : 0.25788624174
+
+V doc score 9 : 0.429889670684
+
+Overall state score : 0.144442286456
+
+Overall state score std : 0.150484297534
+
+State score T-test : 1.81913905371
+
+Overall doc score : 0.319212056827
+
+Overall doc score std : 0.221970174228
+
+Doc score T-test : 0.194949866804
+

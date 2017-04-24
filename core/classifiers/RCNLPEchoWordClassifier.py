@@ -30,6 +30,7 @@ import math
 import mdp
 import matplotlib.pyplot as plt
 from core.converters.RCNLPConverter import RCNLPConverter
+from datetime import datetime
 
 
 class RCNLPEchoWordClassifier(object):
@@ -74,6 +75,11 @@ class RCNLPEchoWordClassifier(object):
         return RCNLPConverter.generate_data_set_inputs(reps, self._n_classes, author)
     # end generate_training_data_from_text
 
+    # Generate text data from text file
+    def generate_test_data_from_text(self, text_file):
+        return self._converter(io.open(text_file).read())
+    # end generate_text_data_from_text
+
     # Add example
     def add_example(self, text_file, class_id):
         self._examples[text_file] = class_id
@@ -86,6 +92,7 @@ class RCNLPEchoWordClassifier(object):
         Y = list()
 
         # For each training text file
+        print("Generating data set...")
         for text_file in self._examples.keys():
             x, y = self.generate_training_data_from_text(text_file, self._examples[text_file])
             X.append(x)
@@ -96,12 +103,78 @@ class RCNLPEchoWordClassifier(object):
         data = [None, zip(X, Y)]
 
         # Train the model
+        print("Training model...")
+        print(datetime.now().strftime("%H:%M:%S"))
         self._flow.train(data)
+        print(datetime.now().strftime("%H:%M:%S"))
     # end train
 
     # Predict the class of a text
     def pred(self, text_file):
-        pass
+        # Get reservoir inputs
+        x = self.generate_test_data_from_text(text_file)
+
+        # Get reservoir response
+        y = self._flow(x)
+
+        # Plot results
+        """y -= np.min(y)
+        y /= np.max(y)
+        plt.xlim([0, len(y[:, 0])])
+        plt.ylim([0.0, 1.0])
+        plt.plot(y[:, 0], color='r', label='Author 1')
+        plt.plot(np.repeat(np.average(y[:, 0]), len(y[:, 0])), color='r', label='Author 1 average', linestyle='dashed')
+        plt.plot(y[:, 1], color='b', label='Author 2')
+        plt.plot(np.repeat(np.average(y[:, 1]), len(y[:, 1])), color='b', label='Author 2 average', linestyle='dashed')
+        plt.plot(np.repeat(np.average(y), len(y[:, 1])), color='k', label='Average', linestyle='dashed')
+        plt.show()"""
+
+        # Classify
+        if np.average(y[:, 0]) > np.average(y[:, 1]):
+            return 0
+        else:
+            return 1
+        # end if
     # end pred
+
+    # Predict the class of a string
+    def pred_text(self, text):
+        # Get reservoir inputs
+        x = self._converter(text)
+
+        # Get reservoir response
+        y = self._flow(x)
+
+        # Classify
+        if np.average(y[:, 0]) > np.average(y[:, 1]):
+            return 0
+        else:
+            return 1
+            # end if
+    # end pred_text
+
+    # Get predictions probabilities from file
+    def predictions_from_file(self, text_file):
+        # Get reservoir inputs
+        x = self.generate_test_data_from_text(text_file)
+
+        # Get reservoir response
+        y = self._flow(x)
+
+        # Return probs
+        return np.average(y[:, 0]), np.average(y[:, 1])
+    # end predictions_from_file
+
+    # Get predictions probabilities from file
+    def predictions_from_text(self, text):
+        # Get reservoir inputs
+        x = self._converter(text)
+
+        # Get reservoir response
+        y = self._flow(x)
+
+        # Return probs
+        return np.average(y[:, 0]), np.average(y[:, 1])
+    # end predictions_from_file
 
 # end RCNLPEchoWordClassifier

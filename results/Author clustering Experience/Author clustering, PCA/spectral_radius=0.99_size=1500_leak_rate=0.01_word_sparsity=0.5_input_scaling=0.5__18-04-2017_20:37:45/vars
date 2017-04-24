@@ -1,0 +1,86 @@
+rc_spectral_radius : 0.99
+
+Oger : <module 'Oger' from '/usr/local/lib/python2.7/dist-packages/Oger/__init__.pyc'>
+
+parser : ArgumentParser(prog='author_clustering_with_pos.py', usage=None, description='RCNLP - Author clustering with Part-Of-Speech to Echo State Network', version=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+
+generate_pca_image : <function generate_pca_image at 0x7fae6d9d7848>
+
+kmeans : <function kmeans at 0x7fae6da13ed8>
+
+vq : <function vq at 0x7fae6da13c80>
+
+io : <module 'io' from '/usr/lib/python2.7/io.pyc'>
+
+mdp : <module 'mdp' from '/usr/lib/python2.7/dist-packages/mdp/__init__.pyc'>
+
+PCA : <class 'sklearn.decomposition.pca.PCA'>
+
+rc_size : 1500
+
+rc_leak_rate : 0.01
+
+args : Namespace(author1='/home/schaetti/Projets/TURING/Datasets/ReutersDataset/C50total/AaronPressman/', author2='/home/schaetti/Projets/TURING/Datasets/ReutersDataset/C50total/BradDorfman/', lang='en', ncomponents=10, nfile=-1, startup=50)
+
+ex_name : Author clustering Experience
+
+ds_sparsity : 0
+
+__package__ : None
+
+ex_instance : Author clustering, PCA
+
+RCNLPWordReservoirNode : <class 'core.nodes.RCNLPWordReservoirNode.RCNLPWordReservoirNode'>
+
+save_pca_image : <function save_pca_image at 0x7fae6d9d78c0>
+
+np : <module 'numpy' from '/home/schaetti/.local/lib/python2.7/site-packages/numpy/__init__.pyc'>
+
+ds_data_set_size : 40
+
+circle : <function circle at 0x7fae6d9d7500>
+
+main : <function main at 0x7fae6d9d7938>
+
+__doc__ : None
+
+plt : <module 'matplotlib.pyplot' from '/usr/lib/python2.7/dist-packages/matplotlib/pyplot.pyc'>
+
+ds_slopping_memory : False
+
+__builtins__ : <module '__builtin__' (built-in)>
+
+__file__ : author_clustering_with_pos.py
+
+ds_test_length : 10
+
+create_reservoir : <function create_reservoir at 0x7fae6d9d7758>
+
+generate_reservoir_states : <function generate_reservoir_states at 0x7fae6d9d77d0>
+
+RCNLPLogging : <class 'core.tools.RCNLPLogging.RCNLPLogging'>
+
+RCNLPPlotGenerator : <class 'core.tools.RCNLPPlotGenerator.RCNLPPlotGenerator'>
+
+RCNLPPosConverter : <class 'core.converters.RCNLPPosConverter.RCNLPPosConverter'>
+
+ds_training_length : 30
+
+ds_memory_length : 1200
+
+__name__ : __main__
+
+rc_word_sparsity : 0.5
+
+argparse : <module 'argparse' from '/usr/lib/python2.7/argparse.pyc'>
+
+ds_sample_length : 3000
+
+logging : <core.tools.RCNLPLogging.RCNLPLogging object at 0x7fae6d9dcd90>
+
+time : <module 'time' (built-in)>
+
+rc_input_scaling : 0.5
+
+os : <module 'os' from '/usr/lib/python2.7/os.pyc'>
+

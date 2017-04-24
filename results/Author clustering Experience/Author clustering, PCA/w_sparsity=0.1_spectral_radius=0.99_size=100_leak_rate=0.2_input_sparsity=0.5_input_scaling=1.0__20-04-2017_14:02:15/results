@@ -1,0 +1,22 @@
+Average neural activations : 0.0946279647843
+
+Std dev of neural activations : 0.244354265602
+
+Precision 1 round 0 : 99.0
+
+Precision 2 round 0 : 0.0
+
+Average neural activations : 0.048980900011
+
+Std dev of neural activations : 0.260426003971
+
+Precision 1 round 1 : 92.0
+
+Precision 2 round 1 : 14.0
+
+Overall average precision : 51.25
+
+Overall std precision : 44.5947026002
+
+T-test : 96.4329476823
+
