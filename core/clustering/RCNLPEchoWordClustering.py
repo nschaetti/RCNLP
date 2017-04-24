@@ -85,7 +85,10 @@ class RCNLPEchoWordClustering(object):
         X = list()
         Y = list()
 
+        # For each examples
         for example in examples:
+            print("Creating examples %s and %s." % (example[0], example[1]))
+
             # Generate two data arrays
             x1 = self.generate_data_from_text(example[0])
             x2 = self.generate_data_from_text(example[1])
@@ -94,7 +97,7 @@ class RCNLPEchoWordClustering(object):
             if x1.shape[0] > x2.shape[0]:
                 x1 = x1[:x2.shape[0]]
             elif x2.shape[0] > x1.shape[0]:
-                x2 = x2[:x2.shape[0]]
+                x2 = x2[:x1.shape[0]]
             # end if
 
             # Stack
@@ -138,23 +141,45 @@ class RCNLPEchoWordClustering(object):
         print(datetime.now().strftime("%H:%M:%S"))
     # end train
 
-    # Predict the class of a text
-    def pred(self, text_file):
-        pass
+    # Predict if two text files are from the same author.
+    def pred(self, text1_file, text2_file):
+        # Get reservoir inputs
+        x1 = self._converter(io.open(text1_file).read())
+        x2 = self._converter(io.open(text2_file).read())
+
+        # Same length
+        if x1.shape[0] > x2.shape[0]:
+            x1 = x1[:x2.shape[0]]
+        elif x2.shape[0] > x1.shape[0]:
+            x2 = x2[:x1.shape[0]]
+        # end if
+
+        # Stack
+        x = np.hstack((x1, x2))
+
+        # Get reservoir response
+        y = self._flow(x)
+
+        # Classify
+        if np.average(y[:, 0]) > 0.5:
+            return True
+        else:
+            return False
+            # end if
     # end pred
 
-    # Predict the class of a string
-    def pred_text(self, text):
+    # Predict if two texts are from the same author.
+    def pred_text(self, text1, text2):
         pass
     # end pred_text
 
     # Get predictions probabilities from file
-    def predictions_from_file(self, text_file):
+    def predictions_from_file(self, text1_file, text2_file):
         pass
     # end predictions_from_file
 
     # Get predictions probabilities from file
-    def predictions_from_text(self, text):
+    def predictions_from_text(self, text1, text2):
         pass
     # end predictions_from_file
 

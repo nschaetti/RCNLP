@@ -70,6 +70,7 @@ if __name__ == "__main__":
     parser.add_argument("--pca-model", type=str, help="PCA model to load", default=None)
     parser.add_argument("--in-components", type=int, help="Number of principal component to reduce inputs to.",
                         default=-1)
+    parser.add_argument("--output", type=str, help="Output filename where to save the model.", default=None)
     args = parser.parse_args()
 
     # Logging
@@ -94,9 +95,6 @@ if __name__ == "__main__":
     else:
         converter = RCNLPWordVectorConverter(resize=args.in_components, pca_model=pca_model)
     # end if
-
-    # >> 2. Array for results
-    average_success_rate = np.array([])
 
     # >> 3. Create Echo Word Classifier
     clustering = RCNLPEchoWordClustering(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
@@ -128,11 +126,11 @@ if __name__ == "__main__":
     print("Adding examples with different authors...")
     for author1_id in np.arange(1, args.n_authors + 1, 1):
         # Other authors
-        author2_id = np.random.choice(100, 1)[0] + 1
+        author2_id = np.random.choice(50, 1)[0] + 1
 
         # No same author
         if author1_id == author2_id:
-            author2_id = np.random.choice(100, 1) + 1
+            author2_id = np.random.choice(50, 1)[0] + 1
         # end if
 
         # Author path
@@ -158,4 +156,62 @@ if __name__ == "__main__":
     print("Training model with text files from %s" % os.path.join(args.dataset, "total"))
     clustering.train()
 
+    # >> 7. Init counter
+    success = 0
+    count = 0
+
+    # >> 8. Test model performance with same author
+    for author_id in np.arange(args.n_authors+1, 51, 1):
+        # Author path
+        author_path = os.path.join(args.dataset, "total", str(author_id))
+
+        # For each texts
+        for n in range(args.n_texts):
+            # Random texts
+            texts_id = np.random.randint(0, 99, 2)
+
+            # Texts path
+            text1_path = os.path.join(author_path, str(texts_id[0]) + ".txt")
+            text2_path = os.path.join(author_path, str(texts_id[1]) + ".txt")
+
+            # Add
+            if clustering.pred(text1_path, text2_path):
+                success += 1
+            # end if
+            count += 1
+        # end for
+    # end for
+
+    # >> 9. Test model performance with different authors.
+    for author1_id in np.arange(args.n_authors + 1, 51, 1):
+        # Other authors
+        author2_id = np.random.choice(50, 1)[0] + 1
+
+        # No same author
+        if author1_id == author2_id:
+            author2_id = np.random.choice(50, 1)[0] + 1
+        # end if
+
+        # Author path
+        author1_path = os.path.join(args.dataset, "total", str(author1_id))
+        author2_path = os.path.join(args.dataset, "total", str(author2_id))
+
+        # For each texts
+        for n in range(args.n_texts):
+            # Random texts
+            texts_id = np.random.randint(0, 99, 2)
+
+            # Texts path
+            text1_path = os.path.join(author1_path, str(texts_id[0]) + ".txt")
+            text2_path = os.path.join(author2_path, str(texts_id[1]) + ".txt")
+
+            # Test
+            if not clustering.pred(text1_path, text2_path):
+                success += 1
+            # end for
+        # end for
+    # end for
+
+    # >> 8. Save model
+    pickle.dump(clustering, open(args.output, 'w'))
 # end if
