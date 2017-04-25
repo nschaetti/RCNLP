@@ -137,6 +137,8 @@ class RCNLPEchoWordClustering(object):
         # Train the model
         print("Training model...")
         print(datetime.now().strftime("%H:%M:%S"))
+        # HERE WE HAVE A PROBLEM
+        # AttributeError: 'list' object has no attribute 'ndim'
         self._flow.train(data)
         print(datetime.now().strftime("%H:%M:%S"))
     # end train
