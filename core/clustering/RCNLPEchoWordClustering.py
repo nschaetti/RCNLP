@@ -105,6 +105,7 @@ class RCNLPEchoWordClustering(object):
 
             # Output
             y = np.repeat(output, x1.shape[0], axis=0)
+            y.shape = (x1.shape[0], 1)
 
             X.append(x)
             Y.append(y)
@@ -122,14 +123,14 @@ class RCNLPEchoWordClustering(object):
         # For each same author examples
         print("Generating same author data set...")
         X_, Y_ = self.generate_data_set(self._same_examples, 1)
-        X.append(X_)
-        X.append(Y_)
+        X += X_
+        Y += Y_
 
         # For each different author examples
         print("Generating different author data set...")
-        X_, Y_ = self.generate_data_set(self._different_examples, 1)
-        X.append(X_)
-        Y.append(Y_)
+        X_, Y_ = self.generate_data_set(self._different_examples, 0)
+        X += X_
+        Y += Y_
 
         # Create data
         data = [None, zip(X, Y)]
@@ -137,8 +138,6 @@ class RCNLPEchoWordClustering(object):
         # Train the model
         print("Training model...")
         print(datetime.now().strftime("%H:%M:%S"))
-        # HERE WE HAVE A PROBLEM
-        # AttributeError: 'list' object has no attribute 'ndim'
         self._flow.train(data)
         print(datetime.now().strftime("%H:%M:%S"))
     # end train
@@ -161,6 +160,14 @@ class RCNLPEchoWordClustering(object):
 
         # Get reservoir response
         y = self._flow(x)
+
+        y -= np.min(y)
+        y /= np.max(y)
+        plt.xlim([0, len(y[:, 0])])
+        plt.ylim([0.0, 1.0])
+        plt.plot(y[:, 0], color='r', label='Author 1')
+        plt.plot(np.repeat(np.average(y[:, 0]), len(y[:, 0])), color='r', label='Author 1 average', linestyle='dashed')
+        plt.show()
 
         # Classify
         if np.average(y[:, 0]) > 0.5:

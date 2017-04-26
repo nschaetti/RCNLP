@@ -47,10 +47,10 @@ ex_instance = "Author Clustering"
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
 rc_input_scaling = 0.25  # Input scaling
-rc_size = 100  # Reservoir size
+rc_size = 300  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
-rc_input_sparsity = 0.1
+rc_input_sparsity = 0.05
 
 ####################################################
 # Main function
@@ -156,11 +156,14 @@ if __name__ == "__main__":
     print("Training model with text files from %s" % os.path.join(args.dataset, "total"))
     clustering.train()
 
-    # >> 7. Init counter
+    # >> 7. Save model
+    pickle.dump(clustering, open(args.output, 'w'))
+
+    # >> 8. Init counter
     success = 0
     count = 0
 
-    # >> 8. Test model performance with same author
+    # >> 9. Test model performance with same author
     for author_id in np.arange(args.n_authors+1, 51, 1):
         # Author path
         author_path = os.path.join(args.dataset, "total", str(author_id))
@@ -182,7 +185,7 @@ if __name__ == "__main__":
         # end for
     # end for
 
-    # >> 9. Test model performance with different authors.
+    # >> 10. Test model performance with different authors.
     for author1_id in np.arange(args.n_authors + 1, 51, 1):
         # Other authors
         author2_id = np.random.choice(50, 1)[0] + 1
@@ -212,6 +215,4 @@ if __name__ == "__main__":
         # end for
     # end for
 
-    # >> 8. Save model
-    pickle.dump(clustering, open(args.output, 'w'))
 # end if
