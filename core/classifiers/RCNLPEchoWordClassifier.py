@@ -63,7 +63,7 @@ class RCNLPEchoWordClassifier(object):
         self._readout = Oger.nodes.RidgeRegressionNode()
 
         # Flow
-        self._flow = mdp.Flow([self._reservoir, self._readout], verbose=1)
+        self._flow = mdp.Flow([self._reservoir, self._readout], verbose=0)
     # end __init__
 
     # Generate training data from text file
@@ -110,7 +110,7 @@ class RCNLPEchoWordClassifier(object):
     # end train
 
     # Predict the class of a text
-    def pred(self, text_file):
+    def pred(self, text_file, show_graph=False):
         # Get reservoir inputs
         x = self.generate_test_data_from_text(text_file)
 
@@ -118,16 +118,18 @@ class RCNLPEchoWordClassifier(object):
         y = self._flow(x)
 
         # Plot results
-        """y -= np.min(y)
-        y /= np.max(y)
-        plt.xlim([0, len(y[:, 0])])
-        plt.ylim([0.0, 1.0])
-        plt.plot(y[:, 0], color='r', label='Author 1')
-        plt.plot(np.repeat(np.average(y[:, 0]), len(y[:, 0])), color='r', label='Author 1 average', linestyle='dashed')
-        plt.plot(y[:, 1], color='b', label='Author 2')
-        plt.plot(np.repeat(np.average(y[:, 1]), len(y[:, 1])), color='b', label='Author 2 average', linestyle='dashed')
-        plt.plot(np.repeat(np.average(y), len(y[:, 1])), color='k', label='Average', linestyle='dashed')
-        plt.show()"""
+        if show_graph:
+            y -= np.min(y)
+            y /= np.max(y)
+            plt.xlim([0, len(y[:, 0])])
+            plt.ylim([0.0, 1.0])
+            plt.plot(y[:, 0], color='r', label='Author 1')
+            plt.plot(np.repeat(np.average(y[:, 0]), len(y[:, 0])), color='r', label='Author 1 average', linestyle='dashed')
+            plt.plot(y[:, 1], color='b', label='Author 2')
+            plt.plot(np.repeat(np.average(y[:, 1]), len(y[:, 1])), color='b', label='Author 2 average', linestyle='dashed')
+            plt.plot(np.repeat(np.average(y), len(y[:, 1])), color='k', label='Average', linestyle='dashed')
+            plt.show()
+        # end if
 
         # Classify
         if np.average(y[:, 0]) > np.average(y[:, 1]):
