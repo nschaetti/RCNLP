@@ -44,7 +44,7 @@ from core.tools.RCNLPPlotGenerator import RCNLPPlotGenerator
 
 # Exp. info
 ex_name = "Authorship Attribution"
-ex_instance = "Two Authors Exploring Training Size"
+ex_instance = "Author Attribution n authors training size"
 
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate

@@ -42,7 +42,7 @@ from core.tools.RCNLPLogging import RCNLPLogging
 
 # Exp. info
 ex_name = "Authorship Attribution Experience"
-ex_instance = "Author Attribution"
+ex_instance = "Author Attribution n authors"
 
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
