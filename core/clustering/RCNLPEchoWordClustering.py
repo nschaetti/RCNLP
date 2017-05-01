@@ -81,7 +81,7 @@ class RCNLPEchoWordClustering(object):
     # end add_different_author_example
 
     # Generate data set
-    def generate_data_set(self, examples, output):
+    def generate_data_set(self, examples, pos):
         X = list()
         Y = list()
 
@@ -103,9 +103,12 @@ class RCNLPEchoWordClustering(object):
             # Stack
             x = np.hstack((x1, x2))
 
+            # Author vector
+            author_vector = np.zeros((1, 2))
+            author_vector[0, pos] = 1.0
+
             # Output
-            y = np.repeat(output, x1.shape[0], axis=0)
-            y.shape = (x1.shape[0], 1)
+            y = np.repeat(author_vector, x1.shape[0], axis=0)
 
             X.append(x)
             Y.append(y)
@@ -122,13 +125,13 @@ class RCNLPEchoWordClustering(object):
 
         # For each same author examples
         print("Generating same author data set...")
-        X_, Y_ = self.generate_data_set(self._same_examples, 1)
+        X_, Y_ = self.generate_data_set(self._same_examples, 0)
         X += X_
         Y += Y_
 
         # For each different author examples
         print("Generating different author data set...")
-        X_, Y_ = self.generate_data_set(self._different_examples, 0)
+        X_, Y_ = self.generate_data_set(self._different_examples, 1)
         X += X_
         Y += Y_
 
@@ -143,7 +146,7 @@ class RCNLPEchoWordClustering(object):
     # end train
 
     # Predict if two text files are from the same author.
-    def pred(self, text1_file, text2_file):
+    def pred(self, text1_file, text2_file, show_graph=False):
         # Get reservoir inputs
         x1 = self._converter(io.open(text1_file).read())
         x2 = self._converter(io.open(text2_file).read())
@@ -161,19 +164,22 @@ class RCNLPEchoWordClustering(object):
         # Get reservoir response
         y = self._flow(x)
 
-        y -= np.min(y)
-        y /= np.max(y)
-        plt.xlim([0, len(y[:, 0])])
-        plt.ylim([0.0, 1.0])
-        plt.plot(y[:, 0], color='r', label='Author 1')
-        plt.plot(np.repeat(np.average(y[:, 0]), len(y[:, 0])), color='r', label='Author 1 average', linestyle='dashed')
-        plt.show()
+        # Show graph
+        if show_graph:
+            #y -= np.min(y)
+            #y /= np.max(y)
+            plt.xlim([0, len(y[:, 0])])
+            #plt.ylim([0.0, 1.0])
+            plt.plot(y[:, 0], color='r', label='Author 1')
+            plt.plot(np.repeat(np.average(y[:, 0]), len(y[:, 0])), color='r', label='Author 1 average', linestyle='dashed')
+            plt.show()
+        # end if
 
         # Classify
-        if np.average(y[:, 0]) > 0.5:
-            return True
+        if np.average(y[:, 0]) >= np.average(y[:, 1]):
+            return True, np.average(y[:, 0]), np.std(y[:, 0])
         else:
-            return False
+            return False, np.average(y[:, 1]), np.std(y[:, 1])
         # end if
     # end pred
 

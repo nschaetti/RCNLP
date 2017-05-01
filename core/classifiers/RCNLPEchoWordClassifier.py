@@ -92,7 +92,7 @@ class RCNLPEchoWordClassifier(object):
         Y = list()
 
         # For each training text file
-        print("Generating data set...")
+        #print("Generating data set...")
         for text_file in self._examples.keys():
             x, y = self.generate_training_data_from_text(text_file, self._examples[text_file])
             X.append(x)
@@ -103,10 +103,10 @@ class RCNLPEchoWordClassifier(object):
         data = [None, zip(X, Y)]
 
         # Train the model
-        print("Training model...")
-        print(datetime.now().strftime("%H:%M:%S"))
+        #print("Training model...")
+        #print(datetime.now().strftime("%H:%M:%S"))
         self._flow.train(data)
-        print(datetime.now().strftime("%H:%M:%S"))
+        #print(datetime.now().strftime("%H:%M:%S"))
     # end train
 
     # Predict the class of a text
@@ -116,11 +116,12 @@ class RCNLPEchoWordClassifier(object):
 
         # Get reservoir response
         y = self._flow(x)
-
+        y -= np.min(y)
+        y /= np.max(y)
         # Plot results
         if show_graph:
-            y -= np.min(y)
-            y /= np.max(y)
+            """y -= np.min(y)
+            y /= np.max(y)"""
             plt.xlim([0, len(y[:, 0])])
             plt.ylim([0.0, 1.0])
             plt.plot(y[:, 0], color='r', label='Author 1')
@@ -133,9 +134,9 @@ class RCNLPEchoWordClassifier(object):
 
         # Classify
         if np.average(y[:, 0]) > np.average(y[:, 1]):
-            return 0
+            return 0, np.average(y[:, 0]), np.average(y[:, 1])
         else:
-            return 1
+            return 1, np.average(y[:, 0]), np.average(y[:, 1])
         # end if
     # end pred
 
@@ -146,13 +147,15 @@ class RCNLPEchoWordClassifier(object):
 
         # Get reservoir response
         y = self._flow(x)
+        y -= np.min(y)
+        y /= np.max(y)
 
         # Classify
         if np.average(y[:, 0]) > np.average(y[:, 1]):
-            return 0
+            return 0, np.average(y[:, 0]), np.average(y[:, 1])
         else:
-            return 1
-            # end if
+            return 1, np.average(y[:, 0]), np.average(y[:, 1])
+        # end if
     # end pred_text
 
     # Get predictions probabilities from file

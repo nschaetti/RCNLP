@@ -29,6 +29,7 @@ import matplotlib.pyplot as plt
 import pickle
 import numpy as np
 import Oger
+import spacy
 from core.converters.RCNLPPosConverter import RCNLPPosConverter
 from core.converters.RCNLPTagConverter import RCNLPTagConverter
 from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
@@ -97,18 +98,21 @@ if __name__ == "__main__":
     # end if
 
     # >> 3. Array for results
-    success_rate_avg = np.array([])
-    success_rate_std = np.array([])
+    doc_success_rate_avg = np.array([])
+    sen_success_rate_avg = np.array([])
+    doc_success_rate_std = np.array([])
+    sen_success_rate_std = np.array([])
 
     # Training set sizes
-    training_set_sizes = np.arange(1, 100, args.step)
+    training_set_sizes = np.arange(1, 96, args.step)
 
     # For each training size
     for training_size in training_set_sizes:
         logging.save_results("Training size ", training_size, display=True)
 
         # Average success rate for this training size
-        training_size_average_success_rate = np.array([])
+        training_size_average_doc_success_rate = np.array([])
+        training_size_average_sen_success_rate = np.array([])
 
         # >> 4. Try n time
         for s in range(0, args.samples):
@@ -135,41 +139,62 @@ if __name__ == "__main__":
             classifier.train()
 
             # >> 9. Test model performance
-            success = 0.0
-            count = 0.0
+            doc_success = sen_success = 0.0
+            doc_count = sen_count = 0.0
             for author_index, author_id in enumerate((author_indexes[0], author_indexes[1])):
                 author_path = os.path.join(args.dataset, "total", str(author_id))
                 for file_index in test_set_indexes:
+                    file_path = os.path.join(author_path, str(file_index) + ".txt")
+
+                    # Doc. success rate
                     author_pred = classifier.pred(os.path.join(author_path, str(file_index) + ".txt"))
                     if author_pred == author_index:
-                        success += 1.0
+                        doc_success += 1.0
                     # end if
-                    count += 1.0
+                    doc_count += 1.0
+
+                    # Sentence success rate
+                    nlp = spacy.load(args.lang)
+                    doc = nlp(io.open(file_path, 'r').read())
+                    for sentence in doc.sents:
+                        sentence_pred, _, _ = classifier.pred_text(sentence.text)
+                        if sentence_pred == author_index:
+                            sen_success += 1.0
+                        # end if
+                        sen_count += 1.0
+                    # end for
                 # end for
             # end for
 
             # >> 11. Save results
-            training_size_average_success_rate = np.append(training_size_average_success_rate, [(success / count) * 100.0])
+            training_size_average_doc_success_rate = np.append(training_size_average_doc_success_rate,
+                                                               [(doc_success / doc_count) * 100.0])
+            training_size_average_sen_success_rate = np.append(training_size_average_sen_success_rate,
+                                                               [(sen_success / sen_count) * 100.0])
 
             # Delete variables
             del classifier
         # end for
 
         # >> 10. Log success
-        logging.save_results("Success rate ", np.average(training_size_average_success_rate), display=True)
+        logging.save_results("Doc. success rate ", np.average(training_size_average_doc_success_rate), display=True)
+        logging.save_results("Sen. success rate ", np.average(training_size_average_sen_success_rate), display=True)
 
         # Save results
-        success_rate_avg = np.append(success_rate_avg, np.average(training_size_average_success_rate))
-        success_rate_std = np.append(success_rate_std, np.std(training_size_average_success_rate))
-
+        doc_success_rate_avg = np.append(doc_success_rate_avg, np.average(training_size_average_doc_success_rate))
+        doc_success_rate_std = np.append(doc_success_rate_std, np.std(training_size_average_doc_success_rate))
+        sen_success_rate_avg = np.append(sen_success_rate_avg, np.average(training_size_average_sen_success_rate))
+        sen_success_rate_std = np.append(sen_success_rate_std, np.std(training_size_average_sen_success_rate))
     # end for
 
     # Plot perfs
     plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
-    plot.add_sub_plot(title=ex_instance + ", success rate vs training size.", x_label="Nb. text file",
-                      y_label="Success rate", ylim=[-10, 120])
-    plot.plot(y=success_rate_avg, x=training_set_sizes, yerr=success_rate_std, label="Success rate", subplot=1,
+    plot.add_sub_plot(title=ex_instance + ", success rates vs training size.", x_label="Nb. text file",
+                      y_label="Success rates", ylim=[-10, 120])
+    plot.plot(y=doc_success_rate_avg, x=training_set_sizes, yerr=doc_success_rate_std, label="Doc. success rate", subplot=1,
               marker='o', color='b')
+    plot.plot(y=sen_success_rate_avg, x=training_set_sizes, yerr=sen_success_rate_std, label="Sen. success rate", subplot=1,
+              marker='o', color='r')
     logging.save_plot(plot)
 
     # Open logging dir
