@@ -152,7 +152,7 @@ class RCNLPLogging(object):
 
         # Display if need
         if display:
-            print(name + " : " + str(value))
+            print('\033[91m' + name + " : " + str(value) + '\033[0m')
         # endif
 
         # Close
