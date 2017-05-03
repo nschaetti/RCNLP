@@ -66,6 +66,17 @@ class RCNLPEchoWordClassifier(object):
         self._flow = mdp.Flow([self._reservoir, self._readout], verbose=0)
     # end __init__
 
+    # Reset learning but keep reservoir
+    def reset(self):
+        del self._readout, self._flow
+
+        # Ridge Regression
+        self._readout = Oger.nodes.RidgeRegressionNode()
+
+        # Flow
+        self._flow = mdp.Flow([self._reservoir, self._readout], verbose=0)
+    # end reset
+
     # Generate training data from text file
     def generate_training_data_from_text(self, text_file, author):
         # Get Temporal Representations

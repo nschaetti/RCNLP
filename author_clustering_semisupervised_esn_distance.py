@@ -55,6 +55,22 @@ rc_w_sparsity = 0.1
 rc_input_sparsity = 0.1
 
 ####################################################
+# Functions
+####################################################
+
+
+def get_n_token(text_file):
+    t_nlp = spacy.load(args.lang)
+    doc = t_nlp(io.open(text_file, 'r').read())
+    count = 0
+    # For each token
+    for index, word in enumerate(doc):
+        count += 1
+    # end for
+    return count
+# end get_n_token
+
+####################################################
 # Main function
 ####################################################
 
@@ -105,35 +121,44 @@ if __name__ == "__main__":
     success_rates = np.array([])
     same_probs = np.array([])
     diff_probs = np.array([])
+    nearest_success_rate = np.array([])
+
+    # >> 6. Create Echo Word Classifier
+    classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
+                                         input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
+                                         spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
 
     # >> 4. Try n time
     for s in range(args.samples):
+        n_token = 0
+
+        # Choose a random author
         the_author = np.random.choice(np.arange(1, 51, 1))
-        max_prob = 0.0
-        max_cat = ''
+        print(the_author)
 
         # >> 5. Prepare training and test set.
-        training_set_indexes = np.arange(s, s+args.training_size, 1)
+        training_set_indexes = np.random.choice(np.arange(0, 100), size=1, replace=False)
         test_set_indexes = np.delete(np.arange(0, 100, 1), training_set_indexes)[:args.test_size]
         negatives_set_indexes = np.arange(0, args.negatives, 1)
         other_authors = np.delete(np.arange(1, 51, 1), the_author-1)
-
-        # >> 6. Create Echo Word Classifier
-        classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
-                                             input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
-                                             spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
+        print(training_set_indexes)
+        print(test_set_indexes)
 
         # >> 7. Add authors examples
         author_path = os.path.join(args.dataset, "total", str(the_author))
         for file_index in training_set_indexes:
             file_path = os.path.join(author_path, str(file_index) + ".txt")
+            print(file_path)
             classifier.add_example(file_path, 0)
+            n_token += get_n_token(file_path)
+            print(n_token)
         # end for
 
         # >> 8. Add negative examples
         others_path = os.path.join(args.dataset, "total", "others")
         for file_index in negatives_set_indexes:
             file_path = os.path.join(others_path, str(file_index) + ".txt")
+            print(file_path)
             classifier.add_example(file_path, 1)
         # end for
 
@@ -143,11 +168,13 @@ if __name__ == "__main__":
         # >> 9. Test model performances
         success = 0.0
         count = 0.0
+        max_prob = 0
+        max_cat = ''
 
         # >> 10. Test same author
         for file_index in test_set_indexes:
             file_path = os.path.join(author_path, str(file_index) + ".txt")
-
+            print(file_path)
             # Doc. success rate
             if not args.sentence:
                 author_pred, same_prob, diff_prob = classifier.pred(file_path)
@@ -178,7 +205,7 @@ if __name__ == "__main__":
         for file_index in test_set_indexes:
             other_author_path = os.path.join(args.dataset, "total", str(np.random.choice(other_authors)))
             file_path = os.path.join(other_author_path, str(file_index) + ".txt")
-
+            print(file_path)
             if not args.sentence:
                 author_pred, same_prob, diff_prob = classifier.pred(file_path)
                 diff_probs = np.append(diff_probs, same_prob)
@@ -210,18 +237,26 @@ if __name__ == "__main__":
         # end for
 
         # >> 11. Save results
+        logging.save_results("Text length ", n_token, display=True)
         logging.save_results("Success rate ", (success / count) * 100.0, display=True)
         logging.save_results("Max prob ", max_prob * 100, display=True)
         logging.save_results("Max cat ", max_cat, display=True)
         success_rates = np.append(success_rates, [(success / count) * 100.0])
 
-        # Delete variables
-        del classifier
+        # Nearest success rate
+        if max_cat == 'same':
+            nearest_success_rate = np.append(nearest_success_rate, [1.0])
+        else:
+            nearest_success_rate = np.append(nearest_success_rate, [0.0])
+
+        # Reset learning
+        classifier.reset()
     # end for
 
     # >> 10. Log success
     logging.save_results("Overall success rate ", np.average(success_rates), display=True)
     logging.save_results("Overall success rate std ", np.std(success_rates), display=True)
+    logging.save_results("Nearest success rate ", np.average(nearest_success_rate), display=True)
 
     # Plot histogram
     print("Plotting histogram of probabilities")
