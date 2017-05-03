@@ -171,8 +171,8 @@ if __name__ == "__main__":
     logging.save_results("Success rate std ", np.std(average_success_rate), display=True)
 
     # Plot histogram
-    bins = np.linspace(0, 1.0, 100)
-    plt.hist(average_success_rate, bins, label="Doc. success rate distribution")
+    bins = np.linspace(0, 100, 40)
+    plt.hist(average_success_rate, bins, label="Success rate distribution")
     plt.legend(loc='upper right')
     plt.show()
 
