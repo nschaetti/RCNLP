@@ -66,13 +66,16 @@ if __name__ == "__main__":
     # Argument
     parser.add_argument("--dataset", type=str, help="Dataset's directory.")
     parser.add_argument("--training-size", type=int, help="Number of texts from the author", default=1)
+    parser.add_argument("--test-size", type=int, help="Number of texts to assess the model.", default=20)
     parser.add_argument("--negatives", type=int, help="Number of negative texts to use", default=1)
+    parser.add_argument("--samples", type=int, help="Number of samples to use to assess accuracy.", default=20)
     parser.add_argument("--lang", type=str, help="Language (ar, en, es, pt)", default='en')
     parser.add_argument("--converter", type=str, help="The text converter to use (fw, pos, tag, wv).", default='pos')
     parser.add_argument("--pca-model", type=str, help="PCA model to load", default=None)
     parser.add_argument("--in-components", type=int, help="Number of principal component to reduce inputs to.",
                         default=-1)
     parser.add_argument("--threshold", type=float, help="Confidence threshold", default=0.5)
+    parser.add_argument("--sentence", action='store_true', help="Test sentence classification rate?", default=False)
     args = parser.parse_args()
 
     # Logging
@@ -99,21 +102,19 @@ if __name__ == "__main__":
     # end if
 
     # >> 3. Array for results
-    doc_success_rates = np.array([])
-    sen_success_rates = np.array([])
+    success_rates = np.array([])
     same_probs = np.array([])
     diff_probs = np.array([])
 
     # >> 4. Try n time
-    for s in range(0, int(100 / args.training_size)):
+    for s in range(args.samples):
         the_author = np.random.choice(np.arange(1, 51, 1))
-        print("Sample %d with author %d" % (s, the_author))
         max_prob = 0.0
         max_cat = ''
 
         # >> 5. Prepare training and test set.
         training_set_indexes = np.arange(s, s+args.training_size, 1)
-        test_set_indexes = np.delete(np.arange(0, 100, 1), training_set_indexes)
+        test_set_indexes = np.delete(np.arange(0, 100, 1), training_set_indexes)[:args.test_size]
         negatives_set_indexes = np.arange(0, args.negatives, 1)
         other_authors = np.delete(np.arange(1, 51, 1), the_author-1)
 
@@ -140,93 +141,100 @@ if __name__ == "__main__":
         classifier.train()
 
         # >> 9. Test model performances
-        doc_success = sen_success = 0.0
-        doc_count = sen_count = 0.0
+        success = 0.0
+        count = 0.0
 
         # >> 10. Test same author
         for file_index in test_set_indexes:
             file_path = os.path.join(author_path, str(file_index) + ".txt")
 
             # Doc. success rate
-            author_pred, same_prob, diff_prob = classifier.pred(file_path)
-            same_probs = np.append(same_probs, same_prob)
-            if same_prob > max_prob:
-                max_prob = same_prob
-                max_cat = 'same'
-            # end if
-            if same_prob > diff_prob and same_prob > args.threshold:
-                doc_success += 1.0
-            # end if
-            doc_count += 1.0
-
-            # Sentence success rate
-            nlp = spacy.load(args.lang)
-            doc = nlp(io.open(file_path, 'r').read())
-            for sentence in doc.sents:
-                author_pred, same_prob, diff_prob = classifier.pred_text(sentence.text)
-                if same_prob > diff_prob and same_prob > args.threshold:
-                    sen_success += 1.0
+            if not args.sentence:
+                author_pred, same_prob, diff_prob = classifier.pred(file_path)
+                same_probs = np.append(same_probs, same_prob)
+                if same_prob > max_prob:
+                    max_prob = same_prob
+                    max_cat = 'same'
                 # end if
-                sen_count += 1.0
-            # end for
+                if same_prob > diff_prob and same_prob > args.threshold:
+                    success += 1.0
+                # end if
+                count += 1.0
+            else:
+                # Sentence success rate
+                nlp = spacy.load(args.lang)
+                doc = nlp(io.open(file_path, 'r').read())
+                for sentence in doc.sents:
+                    author_pred, same_prob, diff_prob = classifier.pred_text(sentence.text)
+                    if same_prob > diff_prob and same_prob > args.threshold:
+                        success += 1.0
+                    # end if
+                    count += 1.0
+                # end for
+            # end if
         # end for
 
         # >> 10. Test different author
         for file_index in test_set_indexes:
-            file_path = os.path.join(author_path, str(file_index) + ".txt")
-
-            # Sen. success rate
             other_author_path = os.path.join(args.dataset, "total", str(np.random.choice(other_authors)))
-            author_pred, same_prob, diff_prob = classifier.pred(os.path.join(other_author_path, str(file_index) + ".txt"))
-            diff_probs = np.append(diff_probs, same_prob)
-            if same_prob > max_prob:
-                max_prob = same_prob
-                max_cat = 'diff'
-            # end if
-            if same_prob > diff_prob and same_prob > args.threshold:
-                pass
-            else:
-                doc_success += 1.0
-            # end if
-            doc_count += 1.0
+            file_path = os.path.join(other_author_path, str(file_index) + ".txt")
 
-            # Sentence success rate
-            nlp = spacy.load(args.lang)
-            doc = nlp(io.open(file_path, 'r').read())
-            for sentence in doc.sents:
-                author_pred, same_prob, diff_prob = classifier.pred_text(sentence.text)
+            if not args.sentence:
+                author_pred, same_prob, diff_prob = classifier.pred(file_path)
+                diff_probs = np.append(diff_probs, same_prob)
+                if same_prob > max_prob:
+                    max_prob = same_prob
+                    max_cat = 'diff'
+                # end if
                 if same_prob > diff_prob and same_prob > args.threshold:
                     pass
                 else:
-                    sen_success += 1.0
+                    success += 1.0
                 # end if
-                sen_count += 1.0
+                count += 1.0
+            else:
+                # Sentence success rate
+                nlp = spacy.load(args.lang)
+                doc = nlp(io.open(file_path, 'r').read())
+                for sentence in doc.sents:
+                    author_pred, same_prob, diff_prob = classifier.pred_text(sentence.text)
+                    if same_prob > diff_prob and same_prob > args.threshold:
+                        pass
+                    else:
+                        success += 1.0
+                    # end if
+                    count += 1.0
+                    # end for
                 # end for
+            # end if
         # end for
 
         # >> 11. Save results
-        logging.save_results("Doc. success rate ", (doc_success / doc_count) * 100.0, display=True)
-        logging.save_results("Sen. success rate ", (sen_success / sen_count) * 100.0, display=True)
+        logging.save_results("Success rate ", (success / count) * 100.0, display=True)
         logging.save_results("Max prob ", max_prob * 100, display=True)
         logging.save_results("Max cat ", max_cat, display=True)
-        doc_success_rates = np.append(doc_success_rates, [(doc_success / doc_count) * 100.0])
-        sen_success_rates = np.append(sen_success_rates, [(doc_success / doc_count) * 100.0])
+        success_rates = np.append(success_rates, [(success / count) * 100.0])
 
         # Delete variables
         del classifier
     # end for
 
     # >> 10. Log success
-    logging.save_results("Overall doc. success rate ", np.average(doc_success_rates), display=True)
-    logging.save_results("Overall doc. success rate std ", np.std(doc_success_rates), display=True)
-    logging.save_results("Overall sen. success rate ", np.average(sen_success_rates), display=True)
-    logging.save_results("Overall sen. success rate std ", np.std(sen_success_rates), display=True)
+    logging.save_results("Overall success rate ", np.average(success_rates), display=True)
+    logging.save_results("Overall success rate std ", np.std(success_rates), display=True)
 
     # Plot histogram
-    print("Plotting histogram")
+    print("Plotting histogram of probabilities")
     bins = np.linspace(0, 1.0, 150)
     plt.hist(same_probs, bins, alpha=0.5, label="Same distrib")
     plt.hist(diff_probs, bins, alpha=0.5, label="Different distrib")
+    plt.legend(loc='upper right')
+    plt.show()
+
+    # Plot histogram
+    print("Plotting histogram of success rates")
+    bins = np.linspace(0, 100, 150)
+    plt.hist(success_rates, bins, label="Success rates")
     plt.legend(loc='upper right')
     plt.show()
 
