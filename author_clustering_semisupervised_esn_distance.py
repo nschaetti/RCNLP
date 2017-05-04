@@ -30,6 +30,7 @@ import pickle
 import numpy as np
 import Oger
 import spacy
+import mdp
 from core.converters.RCNLPPosConverter import RCNLPPosConverter
 from core.converters.RCNLPTagConverter import RCNLPTagConverter
 from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
@@ -123,10 +124,9 @@ if __name__ == "__main__":
     diff_probs = np.array([])
     nearest_success_rate = np.array([])
 
-    # >> 6. Create Echo Word Classifier
-    classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
-                                         input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
-                                         spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
+    # >> 4. Generate W
+    w = mdp.numx.random.choice([0.0, 1.0], (rc_size, rc_size), p=[1.0 - rc_w_sparsity, rc_w_sparsity])
+    w[w == 1] = mdp.numx.random.rand(len(w[w == 1]))
 
     # >> 4. Try n time
     for s in range(args.samples):
@@ -140,6 +140,11 @@ if __name__ == "__main__":
         test_set_indexes = np.delete(np.arange(0, 100, 1), training_set_indexes)[:args.test_size]
         negatives_set_indexes = np.arange(0, args.negatives, 1)
         other_authors = np.delete(np.arange(1, 51, 1), the_author-1)
+
+        # >> 6. Create Echo Word Classifier
+        classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
+                                             input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
+                                             spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity, w=w)
 
         # >> 7. Add authors examples
         author_path = os.path.join(args.dataset, "total", str(the_author))
@@ -242,7 +247,7 @@ if __name__ == "__main__":
             nearest_success_rate = np.append(nearest_success_rate, [0.0])
 
         # Reset learning
-        classifier.reset()
+        del classifier
     # end for
 
     # >> 10. Log success

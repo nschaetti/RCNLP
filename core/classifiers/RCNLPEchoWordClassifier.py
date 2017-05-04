@@ -37,7 +37,7 @@ class RCNLPEchoWordClassifier(object):
 
     # Constructor
     def __init__(self, size, leak_rate, input_scaling, w_sparsity, input_sparsity, spectral_radius, converter,
-                 n_classes):
+                 n_classes, w):
         # Properties
         self._input_dim = converter.get_n_inputs()
         self._output_dim = size
@@ -54,7 +54,7 @@ class RCNLPEchoWordClassifier(object):
         self._reservoir = Oger.nodes.LeakyReservoirNode(input_dim=self._input_dim, output_dim=self._output_dim,
                                                         input_scaling=input_scaling,
                                                         leak_rate=leak_rate, spectral_radius=spectral_radius,
-                                                        sparsity=input_sparsity, w_sparsity=w_sparsity)
+                                                        sparsity=input_sparsity, w_sparsity=w_sparsity, w=w)
 
         # Reset state at each call
         self._reservoir.reset_states = True
