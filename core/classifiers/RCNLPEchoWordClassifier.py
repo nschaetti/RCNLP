@@ -37,7 +37,7 @@ class RCNLPEchoWordClassifier(object):
 
     # Constructor
     def __init__(self, size, leak_rate, input_scaling, w_sparsity, input_sparsity, spectral_radius, converter,
-                 n_classes, w):
+                 n_classes, w=None):
         # Properties
         self._input_dim = converter.get_n_inputs()
         self._output_dim = size
@@ -129,6 +129,15 @@ class RCNLPEchoWordClassifier(object):
         y = self._flow(x)
         y -= np.min(y)
         y /= np.max(y)
+
+        for y_ in y:
+            print(y_[0])
+        # end for
+        print("")
+        for y_ in y:
+            print(y_[1])
+        # end for
+
         # Plot results
         if show_graph:
             """y -= np.min(y)

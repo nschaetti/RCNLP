@@ -144,7 +144,7 @@ if __name__ == "__main__":
             print("Testing model performances with %d text files for author from %s..." % (test_set_indexes.shape[0],
                                                                                            author_path))
             for file_index in test_set_indexes:
-                author_pred = classifier.pred(os.path.join(author_path, str(file_index) + ".txt"))
+                author_pred = classifier.pred(os.path.join(author_path, str(file_index) + ".txt"), show_graph=True)
                 if author_pred == author_index:
                     success += 1.0
                 # end if
