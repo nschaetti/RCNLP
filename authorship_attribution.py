@@ -162,7 +162,6 @@ if __name__ == "__main__":
 
         # Delete variables
         del classifier
-        exit()
     # end for
 
     # Log results

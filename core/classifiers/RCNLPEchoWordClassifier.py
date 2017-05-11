@@ -133,10 +133,13 @@ class RCNLPEchoWordClassifier(object):
         for index, y_ in enumerate(y):
             print("(%d, %f)" % (index, y_[0]))
         # end for
+        print(np.average(y[:, 0]))
         print("")
         for index, y_ in enumerate(y):
             print("(%d, %f)" % (index, y_[1]))
         # end for
+        print(np.average(y[:, 1]))
+        exit()
 
         # Plot results
         if show_graph:
