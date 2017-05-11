@@ -130,12 +130,12 @@ class RCNLPEchoWordClassifier(object):
         y -= np.min(y)
         y /= np.max(y)
 
-        for y_ in y:
-            print(y_[0])
+        for index, y_ in enumerate(y):
+            print("(%d, %f)" % (index, y_[0]))
         # end for
         print("")
-        for y_ in y:
-            print(y_[1])
+        for index, y_ in enumerate(y):
+            print("(%d, %f)" % (index, y_[1]))
         # end for
 
         # Plot results
