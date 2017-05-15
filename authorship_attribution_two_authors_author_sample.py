@@ -30,6 +30,7 @@ import pickle
 import numpy as np
 import Oger
 import spacy
+import mdp
 from core.converters.RCNLPPosConverter import RCNLPPosConverter
 from core.converters.RCNLPTagConverter import RCNLPTagConverter
 from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
@@ -81,19 +82,13 @@ if __name__ == "__main__":
 
     # Argument
     parser.add_argument("--dataset", type=str, help="Dataset's directory.")
-    parser.add_argument("--author1", type=str, help="Author 1' ID.")
-    parser.add_argument("--author2", type=str, help="Author 2's ID.")
     parser.add_argument("--lang", type=str, help="Language (ar, en, es, pt)", default='en')
     parser.add_argument("--converter", type=str, help="The text converter to use (fw, pos, tag, wv).", default='pos')
     parser.add_argument("--pca-model", type=str, help="PCA model to load", default=None)
     parser.add_argument("--in-components", type=int, help="Number of principal component to reduce inputs to.",
                         default=-1)
-    parser.add_argument("--samples", type=int, help="Samples", default=20)
-    parser.add_argument("--step", type=int, help="Step for reservoir size value", default=50)
-    parser.add_argument("--min", type=int, help="Minimum reservoir size value", default=10)
-    parser.add_argument("--max", type=int, help="Maximum reservoir size value", default=1000)
-    parser.add_argument("--training-size", type=int, help="Training size", default=50)
     parser.add_argument("--sentence", action='store_true', help="Test sentence classification rate?", default=False)
+    parser.add_argument("--k", type=int, help="n-Fold Cross Validation.", default=10)
     args = parser.parse_args()
 
     # Logging
@@ -127,8 +122,9 @@ if __name__ == "__main__":
     # >> 2. Array for results
     author_average_success_rates = np.array([])
 
-    # Reservoir sizes
-    reservoir_sizes = np.arange(args.min, args.max+1, args.step)
+    # W matrix
+    w = mdp.numx.random.choice([0.0, 1.0], (rc_size, rc_size), p=[1.0 - rc_w_sparsity, rc_w_sparsity])
+    w[w == 1] = mdp.numx.random.rand(len(w[w == 1]))
 
     # For each reservoir size
     for author1 in np.arange(1, 51, 1):
@@ -141,8 +137,6 @@ if __name__ == "__main__":
 
                 # k-Fold cross validation
                 for k in range(0, args.k):
-                    print("%d-Fold" % k)
-
                     # >> 5. Prepare training and test set.
                     test_set_indexes = indexes[k]
                     training_set_indexes = indexes
@@ -154,7 +148,8 @@ if __name__ == "__main__":
                                                          leak_rate=rc_leak_rate,
                                                          input_sparsity=rc_input_sparsity, converter=converter,
                                                          n_classes=2,
-                                                         spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
+                                                         spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity,
+                                                         w=w)
 
                     # >> 7. Add examples
                     for author_index, author_id in enumerate((author1, author2)):
@@ -173,17 +168,29 @@ if __name__ == "__main__":
                     for author_index, author_id in enumerate((author1, author2)):
                         author_path = os.path.join(args.dataset, "total", str(author_id))
                         for file_index in test_set_indexes:
-                            author_pred = classifier.pred(os.path.join(author_path, str(file_index) + ".txt"),
-                                                          show_graph=True)
-                            if author_pred == author_index:
-                                success += 1.0
-                            # end if
-                            count += 1.0
-                            # end for
-                    # end for
+                            file_path = os.path.join(author_path, str(file_index) + ".txt")
 
-                    # >> 10. Log success
-                    logging.save_results("Success rate ", (success / count) * 100.0, display=True)
+                            # Document success rate
+                            if not args.sentence:
+                                author_pred, _, _ = classifier.pred(file_path)
+                                if author_pred == author_index:
+                                    success += 1.0
+                                # end if
+                                count += 1.0
+                            else:
+                                # Sentence success rate
+                                nlp = spacy.load(args.lang)
+                                doc = nlp(io.open(file_path, 'r').read())
+                                for sentence in doc.sents:
+                                    sentence_pred, _, _ = classifier.pred_text(sentence.text)
+                                    if sentence_pred == author_index:
+                                        success += 1.0
+                                    # end if
+                                    count += 1.0
+                                # end for
+                            # end if
+                        # end for
+                    # end for
 
                     # >> 11. Save results
                     average_success_rate = np.append(average_success_rate, [(success / count) * 100.0])

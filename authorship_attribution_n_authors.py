@@ -22,13 +22,12 @@
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import io
 import os
 import argparse
-import matplotlib.pyplot as plt
 import pickle
 import numpy as np
-import Oger
+import itertools
+from random import shuffle
 from core.converters.RCNLPPosConverter import RCNLPPosConverter
 from core.converters.RCNLPTagConverter import RCNLPTagConverter
 from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
@@ -42,7 +41,7 @@ from core.tools.RCNLPLogging import RCNLPLogging
 
 # Exp. info
 ex_name = "Authorship Attribution Experience"
-ex_instance = "Author Attribution n authors"
+ex_instance = "Author Attribution Multiple Authors"
 
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
@@ -51,6 +50,26 @@ rc_size = 100  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.1
+
+####################################################
+# Functions
+####################################################
+
+
+def get_combinations(n_authors, n_samples):
+    """
+    Return n_samples random combinations of n_authors
+    :param n_authors:
+    :param n_samples:
+    :return:
+    """
+    comb = itertools.combinations(np.arange(1, 51), n_authors)
+    combl = list()
+    for c in comb:
+        combl.append(c)
+    # end for
+    return shuffle(combl)[:n_samples]
+# end get_combinations
 
 ####################################################
 # Main function
@@ -63,9 +82,8 @@ if __name__ == "__main__":
 
     # Argument
     parser.add_argument("--dataset", type=str, help="Dataset's directory.")
-    parser.add_argument("--author1", type=str, help="Author 1' ID.")
-    parser.add_argument("--author2", type=str, help="Author 2's ID.")
-    parser.add_argument("--samples", type=int, help="Number of samples to use to assess accuracy.", default=20)
+    parser.add_argument("--n-authors", type=int, help="How many authors.")
+    parser.add_argument("--samples", type=int, help="How many samples to test the performances.")
     parser.add_argument("--lang", type=str, help="Language (ar, en, es, pt)", default='en')
     parser.add_argument("--converter", type=str, help="The text converter to use (fw, pos, tag, wv).", default='pos')
     parser.add_argument("--pca-model", type=str, help="PCA model to load", default=None)
@@ -103,69 +121,70 @@ if __name__ == "__main__":
     indexes.shape = (args.k, n_fold_samples)
 
     # >> 3. Array for results
-    average_success_rate = np.array([])
+    n_authors_average_success_rate = np.array([])
 
-    # >> 4. n-Fold cross validation
-    for k in range(0, args.k):
-        print("%d-Fold" % k)
+    # Combination
+    combinations = get_combinations(args.n_authors, args.n_samples)
 
-        # >> 5. Prepare training and test set.
-        test_set_indexes = indexes[k]
-        training_set_indexes = indexes
-        training_set_indexes = np.delete(training_set_indexes, k, axis=0)
-        training_set_indexes.shape = (100 - n_fold_samples)
+    # For each combinations
+    for c in combinations:
+        print(c)
 
-        # >> 6. Create Echo Word Classifier
-        classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
-                                             input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
-                                             spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
+        # >> 3. Array for results
+        average_success_rate = np.array([])
 
-        # >> 7. Add examples
-        print(training_set_indexes)
-        for author_index, author_id in enumerate((args.author1, args.author2)):
-            author_path = os.path.join(args.dataset, "total", author_id)
-            print("Adding %d examples for author from %s" % (training_set_indexes.shape[0], author_path))
-            for file_index in training_set_indexes:
-                classifier.add_example(os.path.join(author_path, str(file_index) + ".txt"), author_index)
+        # >> 4. n-Fold cross validation
+        for k in range(0, args.k):
+            # >> 5. Prepare training and test set.
+            test_set_indexes = indexes[k]
+            training_set_indexes = indexes
+            training_set_indexes = np.delete(training_set_indexes, k, axis=0)
+            training_set_indexes.shape = (100 - n_fold_samples)
+
+            # >> 6. Create Echo Word Classifier
+            classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
+                                                 input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
+                                                 spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
+
+            # >> 7. Add examples
+            for author_index, author_id in enumerate(c):
+                author_path = os.path.join(args.dataset, "total", author_id)
+                for file_index in training_set_indexes:
+                    classifier.add_example(os.path.join(author_path, str(file_index) + ".txt"), author_index)
+                # end for
             # end for
+
+            # >> 8. Train model
+            classifier.train()
+
+            # >> 9. Test model performance
+            success = 0.0
+            count = 0.0
+            for author_index, author_id in enumerate(c):
+                author_path = os.path.join(args.dataset, "total", author_id)
+                for file_index in test_set_indexes:
+                    author_pred = classifier.pred(os.path.join(author_path, str(file_index) + ".txt"), show_graph=True)
+                    if author_pred == author_index:
+                        success += 1.0
+                    # end if
+                    count += 1.0
+                # end for
+            # end for
+
+            # >> 11. Save results
+            average_success_rate = np.append(average_success_rate, [(success / count) * 100.0])
+
+            # Delete variables
+            del classifier
         # end for
 
-        # >> 8. Train model
-        print("Training model with text files from %s" % os.path.join(args.dataset, "total"))
-        classifier.train()
-
-        # >> 9. Test model performance
-        print("Testing model performances with text files from %s..." % os.path.join(args.dataset, "total"))
-        print(test_set_indexes)
-        success = 0.0
-        count = 0.0
-        for author_index, author_id in enumerate((args.author1, args.author2)):
-            author_path = os.path.join(args.dataset, "total", author_id)
-            print("Testing model performances with %d text files for author from %s..." % (test_set_indexes.shape[0],
-                                                                                           author_path))
-            for file_index in test_set_indexes:
-                author_pred = classifier.pred(os.path.join(author_path, str(file_index) + ".txt"))
-                if author_pred == author_index:
-                    success += 1.0
-                # end if
-                count += 1.0
-            # end for
-        # end for
-
-        # >> 10. Log success
-        logging.save_results("Number of file in test set ", count, display=True)
-        logging.save_results("Number of success ", success, display=True)
-        logging.save_results("Success rate ", (success / count) * 100.0, display=True)
-
-        # >> 11. Save results
-        average_success_rate = np.append(average_success_rate, [(success / count) * 100.0])
-
-        # Delete variables
-        del classifier
+        # Log results
+        logging.save_results("Average success rate ", np.average(average_success_rate), display=True)
+        logging.save_results("Success rate std ", np.std(average_success_rate), display=True)
     # end for
 
     # Log results
-    logging.save_results("Average success rate ", np.average(average_success_rate), display=True)
-    logging.save_results("Success rate std ", np.std(average_success_rate), display=True)
+    logging.save_results("Authors average success rate ", np.average(n_authors_average_success_rate), display=True)
+    logging.save_results("Authors success rates std ", np.std(n_authors_average_success_rate), display=True)
 
 # end if

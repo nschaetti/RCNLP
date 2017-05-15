@@ -30,6 +30,7 @@ import pickle
 import numpy as np
 import Oger
 import spacy
+import mdp
 from core.converters.RCNLPPosConverter import RCNLPPosConverter
 from core.converters.RCNLPTagConverter import RCNLPTagConverter
 from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
@@ -168,7 +169,7 @@ if __name__ == "__main__":
 
                     # Success rate
                     if not args.sentence:
-                        author_pred = classifier.pred(os.path.join(author_path, str(file_index) + ".txt"))
+                        author_pred, _, _ = classifier.pred(file_path)
                         if author_pred == author_index:
                             success += 1.0
                         # end if
@@ -208,6 +209,10 @@ if __name__ == "__main__":
 
     for index, success_rate in enumerate(success_rate_avg):
         print("(%d, %f)" % (n_tokens[index], success_rate))
+    # end for
+
+    for index, success_rate_std in enumerate(success_rate_std):
+        print("(%d, %f)" % (n_tokens[index], success_rate_std))
     # end for
 
     # Plot perfs
