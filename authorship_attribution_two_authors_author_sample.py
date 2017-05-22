@@ -203,7 +203,7 @@ if __name__ == "__main__":
         logging.save_results("Pair Success rate ", np.average(average_success_rate), display=True)
 
         # Save results
-        author_average_success_rates = np.append(average_success_rate, np.average(author_average_success_rates))
+        author_average_success_rates = np.append(author_average_success_rates, np.average(average_success_rate))
     # end for
 
     print(author_average_success_rates)
