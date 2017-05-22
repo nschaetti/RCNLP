@@ -89,6 +89,7 @@ if __name__ == "__main__":
                         default=-1)
     parser.add_argument("--sentence", action='store_true', help="Test sentence classification rate?", default=False)
     parser.add_argument("--k", type=int, help="n-Fold Cross Validation.", default=10)
+    parser.add_argument("--samples", type=int, help="Number of author pairs to sample", default=50)
     args = parser.parse_args()
 
     # Logging
@@ -127,85 +128,82 @@ if __name__ == "__main__":
     w[w == 1] = mdp.numx.random.rand(len(w[w == 1]))
 
     # For each reservoir size
-    for author1 in np.arange(1, 51, 1):
-        for author2 in np.arange(1, 51, 1):
-            if author1 != author2:
-                print("Author %d and %d" % (author1, author2))
+    for samples in range(args.samples):
+        author1, author2 = np.random.choice(np.arange(1, 51), 2, replace=False)
+        print("Author %d and %d" % (author1, author2))
 
-                # >> 3. Array for results
-                average_success_rate = np.array([])
+        # >> 3. Array for results
+        average_success_rate = np.array([])
 
-                # k-Fold cross validation
-                for k in range(0, args.k):
-                    # >> 5. Prepare training and test set.
-                    test_set_indexes = indexes[k]
-                    training_set_indexes = indexes
-                    training_set_indexes = np.delete(training_set_indexes, k, axis=0)
-                    training_set_indexes.shape = (100 - n_fold_samples)
+        # k-Fold cross validation
+        for k in range(0, args.k):
+            # >> 5. Prepare training and test set.
+            test_set_indexes = indexes[k]
+            training_set_indexes = indexes
+            training_set_indexes = np.delete(training_set_indexes, k, axis=0)
+            training_set_indexes.shape = (100 - n_fold_samples)
 
-                    # >> 6. Create Echo Word Classifier
-                    classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling,
-                                                         leak_rate=rc_leak_rate,
-                                                         input_sparsity=rc_input_sparsity, converter=converter,
-                                                         n_classes=2,
-                                                         spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity,
-                                                         w=w)
+            # >> 6. Create Echo Word Classifier
+            classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling,
+                                                 leak_rate=rc_leak_rate,
+                                                 input_sparsity=rc_input_sparsity, converter=converter,
+                                                 n_classes=2,
+                                                 spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity,
+                                                 w=w)
 
-                    # >> 7. Add examples
-                    for author_index, author_id in enumerate((author1, author2)):
-                        author_path = os.path.join(args.dataset, "total", str(author_id))
-                        for file_index in training_set_indexes:
-                            classifier.add_example(os.path.join(author_path, str(file_index) + ".txt"), author_index)
-                            # end for
+            # >> 7. Add examples
+            for author_index, author_id in enumerate((author1, author2)):
+                author_path = os.path.join(args.dataset, "total", str(author_id))
+                for file_index in training_set_indexes:
+                    classifier.add_example(os.path.join(author_path, str(file_index) + ".txt"), author_index)
                     # end for
+            # end for
 
-                    # >> 8. Train model
-                    classifier.train()
+            # >> 8. Train model
+            classifier.train()
 
-                    # >> 9. Test model performance
-                    success = 0.0
-                    count = 0.0
-                    for author_index, author_id in enumerate((author1, author2)):
-                        author_path = os.path.join(args.dataset, "total", str(author_id))
-                        for file_index in test_set_indexes:
-                            file_path = os.path.join(author_path, str(file_index) + ".txt")
+            # >> 9. Test model performance
+            success = 0.0
+            count = 0.0
+            for author_index, author_id in enumerate((author1, author2)):
+                author_path = os.path.join(args.dataset, "total", str(author_id))
+                for file_index in test_set_indexes:
+                    file_path = os.path.join(author_path, str(file_index) + ".txt")
 
-                            # Document success rate
-                            if not args.sentence:
-                                author_pred, _, _ = classifier.pred(file_path)
-                                if author_pred == author_index:
-                                    success += 1.0
-                                # end if
-                                count += 1.0
-                            else:
-                                # Sentence success rate
-                                nlp = spacy.load(args.lang)
-                                doc = nlp(io.open(file_path, 'r').read())
-                                for sentence in doc.sents:
-                                    sentence_pred, _, _ = classifier.pred_text(sentence.text)
-                                    if sentence_pred == author_index:
-                                        success += 1.0
-                                    # end if
-                                    count += 1.0
-                                # end for
+                    # Document success rate
+                    if not args.sentence:
+                        author_pred, _, _ = classifier.pred(file_path)
+                        if author_pred == author_index:
+                            success += 1.0
+                        # end if
+                        count += 1.0
+                    else:
+                        # Sentence success rate
+                        nlp = spacy.load(args.lang)
+                        doc = nlp(io.open(file_path, 'r').read())
+                        for sentence in doc.sents:
+                            sentence_pred, _, _ = classifier.pred_text(sentence.text)
+                            if sentence_pred == author_index:
+                                success += 1.0
                             # end if
+                            count += 1.0
                         # end for
-                    # end for
-
-                    # >> 11. Save results
-                    average_success_rate = np.append(average_success_rate, [(success / count) * 100.0])
-
-                    # Delete variables
-                    del classifier
+                    # end if
                 # end for
+            # end for
 
-                # >> 10. Log success
-                logging.save_results("Pair Success rate ", np.average(average_success_rate), display=True)
+            # >> 11. Save results
+            average_success_rate = np.append(average_success_rate, [(success / count) * 100.0])
 
-                # Save results
-                author_average_success_rates = np.append(average_success_rate, np.average(author_average_success_rates))
-            # end if
+            # Delete variables
+            del classifier
         # end for
+
+        # >> 10. Log success
+        logging.save_results("Pair Success rate ", np.average(average_success_rate), display=True)
+
+        # Save results
+        author_average_success_rates = np.append(average_success_rate, np.average(author_average_success_rates))
     # end for
 
     print(author_average_success_rates)
