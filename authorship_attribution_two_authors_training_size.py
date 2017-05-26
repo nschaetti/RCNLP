@@ -50,7 +50,7 @@ ex_instance = "Two Authors Exploring Training Size"
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
 rc_input_scaling = 0.25  # Input scaling
-rc_size = 100  # Reservoir size
+rc_size = 25  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.1
@@ -91,6 +91,7 @@ if __name__ == "__main__":
                         default=-1)
     parser.add_argument("--samples", type=int, help="Samples", default=20)
     parser.add_argument("--step", type=int, help="Step for training size value", default=5)
+    parser.add_argument("--max", type=int, help="Max training size", default=95)
     parser.add_argument("--sentence", action='store_true', help="Test sentence classification rate?", default=False)
     args = parser.parse_args()
 
@@ -123,7 +124,7 @@ if __name__ == "__main__":
     n_tokens = np.array([])
 
     # Training set sizes
-    training_set_sizes = np.arange(1, 96, args.step)
+    training_set_sizes = np.arange(1, args.max+1, args.step)
 
     # For each training size
     for training_size in training_set_sizes:
@@ -198,8 +199,10 @@ if __name__ == "__main__":
         # end for
 
         # >> 10. Log success
-        logging.save_results("Training size ", n_token, display=True)
+        logging.save_results("Training size ", training_size, display=True)
+        logging.save_results("Tokens ", n_token, display=True)
         logging.save_results("Success rate ", np.average(training_size_average_success_rate), display=True)
+        logging.save_results("Success rate std ", np.std(training_size_average_success_rate), display=True)
 
         # Save results
         success_rate_avg = np.append(success_rate_avg, np.average(training_size_average_success_rate))
