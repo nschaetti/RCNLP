@@ -198,6 +198,7 @@ if __name__ == "__main__":
         # >> 10. Log success
         logging.save_results("Reservoir size ", reservoir_size, display=True)
         logging.save_results("Success rate ", np.average(training_size_average_success_rate), display=True)
+        logging.save_results("Success rate std ", np.std(training_size_average_success_rate), display=True)
 
         # Save results
         success_rate_avg = np.append(success_rate_avg, np.average(training_size_average_success_rate))
