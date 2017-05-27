@@ -189,7 +189,7 @@ if __name__ == "__main__":
 
                 # >> 11. Save results
                 print((success / count) * 100.0)
-                training_size_average_success_rate = np.append(training_size_average_success_rate,
+                reservoir_size_average_success_rate = np.append(reservoir_size_average_success_rate,
                                                                [(success / count) * 100.0])
 
                 # Delete variables
@@ -201,15 +201,19 @@ if __name__ == "__main__":
 
         # >> 10. Log success
         logging.save_results("Reservoir size ", reservoir_size, display=True)
-        logging.save_results("Success rate ", np.average(training_size_average_success_rate), display=True)
-        logging.save_results("Success rate std ", np.std(training_size_average_success_rate), display=True)
+        logging.save_results("Success rate ", np.average(reservoir_size_average_success_rate), display=True)
+        logging.save_results("Success rate std ", np.std(reservoir_size_average_success_rate), display=True)
 
         # Save results
-        success_rate_avg = np.append(success_rate_avg, np.average(training_size_average_success_rate))
-        success_rate_std = np.append(success_rate_std, np.std(training_size_average_success_rate))
+        success_rate_avg = np.append(success_rate_avg, np.average(reservoir_size_average_success_rate))
+        success_rate_std = np.append(success_rate_std, np.std(reservoir_size_average_success_rate))
     # end for
 
     for index, success_rate in enumerate(success_rate_avg):
+        print("(%d, %f)" % (reservoir_sizes[index], success_rate))
+    # end for
+
+    for index, success_rate in enumerate(success_rate_std):
         print("(%d, %f)" % (reservoir_sizes[index], success_rate))
     # end for
 

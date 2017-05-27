@@ -50,7 +50,7 @@ ex_instance = "Two Authors Exploring Training Size"
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
 rc_input_scaling = 0.25  # Input scaling
-rc_size = 25  # Reservoir size
+rc_size = 50  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.1
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     success_rate_avg = np.array([])
     success_rate_std = np.array([])
     n_tokens = np.array([])
-
+    print(rc_size)
     # Training set sizes
     training_set_sizes = np.arange(1, args.max+1, args.step)
 
