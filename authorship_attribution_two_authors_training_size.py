@@ -92,6 +92,7 @@ if __name__ == "__main__":
     parser.add_argument("--samples", type=int, help="Samples", default=20)
     parser.add_argument("--step", type=int, help="Step for training size value", default=5)
     parser.add_argument("--max", type=int, help="Max training size", default=95)
+    parser.add_argument("--min", type=int, help="Min training size", default=1)
     parser.add_argument("--sentence", action='store_true', help="Test sentence classification rate?", default=False)
     args = parser.parse_args()
 
