@@ -136,66 +136,70 @@ if __name__ == "__main__":
 
         # >> 4. Try n time
         for s in range(0, args.samples):
+            try:
+                # >> 5. Prepare training and test set.
+                training_set_indexes = np.arange(0, training_size, 1)
+                test_set_indexes = np.arange(training_size, 100, 1)
+                n_token = 0
 
-            # >> 5. Prepare training and test set.
-            training_set_indexes = np.arange(0, training_size, 1)
-            test_set_indexes = np.arange(training_size, 100, 1)
-            n_token = 0
+                # >> 6. Create Echo Word Classifier
+                classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
+                                                     input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
+                                                     spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
 
-            # >> 6. Create Echo Word Classifier
-            classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
-                                                 input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
-                                                 spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
-
-            # >> 7. Add authors examples
-            for author_index, author_id in enumerate((args.author1, args.author2)):
-                author_path = os.path.join(args.dataset, "total", str(author_id))
-                for file_index in training_set_indexes:
-                    file_path = os.path.join(author_path, str(file_index) + ".txt")
-                    classifier.add_example(file_path, author_index)
-                    n_token += get_n_token(file_path)
+                # >> 7. Add authors examples
+                for author_index, author_id in enumerate((args.author1, args.author2)):
+                    author_path = os.path.join(args.dataset, "total", str(author_id))
+                    for file_index in training_set_indexes:
+                        file_path = os.path.join(author_path, str(file_index) + ".txt")
+                        classifier.add_example(file_path, author_index)
+                        n_token += get_n_token(file_path)
+                    # end for
                 # end for
-            # end for
 
-            # >> 8. Train model
-            classifier.train()
+                # >> 8. Train model
+                classifier.train()
 
-            # >> 9. Test model performance
-            success = 0.0
-            count = 0.0
-            for author_index, author_id in enumerate((args.author1, args.author2)):
-                author_path = os.path.join(args.dataset, "total", str(author_id))
-                for file_index in test_set_indexes:
-                    file_path = os.path.join(author_path, str(file_index) + ".txt")
+                # >> 9. Test model performance
+                success = 0.0
+                count = 0.0
+                for author_index, author_id in enumerate((args.author1, args.author2)):
+                    author_path = os.path.join(args.dataset, "total", str(author_id))
+                    for file_index in test_set_indexes:
+                        file_path = os.path.join(author_path, str(file_index) + ".txt")
 
-                    # Success rate
-                    if not args.sentence:
-                        author_pred, _, _ = classifier.pred(file_path)
-                        if author_pred == author_index:
-                            success += 1.0
-                        # end if
-                        count += 1.0
-                    else:
-                        # Sentence success rate
-                        nlp = spacy.load(args.lang)
-                        doc = nlp(io.open(file_path, 'r').read())
-                        for sentence in doc.sents:
-                            sentence_pred, _, _ = classifier.pred_text(sentence.text)
-                            if sentence_pred == author_index:
+                        # Success rate
+                        if not args.sentence:
+                            author_pred, _, _ = classifier.pred(file_path)
+                            if author_pred == author_index:
                                 success += 1.0
                             # end if
                             count += 1.0
-                        # end for
-                    # end if
+                        else:
+                            # Sentence success rate
+                            nlp = spacy.load(args.lang)
+                            doc = nlp(io.open(file_path, 'r').read())
+                            for sentence in doc.sents:
+                                sentence_pred, _, _ = classifier.pred_text(sentence.text)
+                                if sentence_pred == author_index:
+                                    success += 1.0
+                                # end if
+                                count += 1.0
+                            # end for
+                        # end if
+                    # end for
                 # end for
-            # end for
 
-            # >> 11. Save results
-            training_size_average_success_rate = np.append(training_size_average_success_rate,
-                                                           [(success / count) * 100.0])
+                # >> 11. Save results
+                print((success / count) * 100.0)
+                training_size_average_success_rate = np.append(training_size_average_success_rate,
+                                                               [(success / count) * 100.0])
 
-            # Delete variables
-            del classifier
+                # Delete variables
+                del classifier
+            except:
+                pass
+            # end try
         # end for
 
         # >> 10. Log success
