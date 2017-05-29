@@ -125,7 +125,7 @@ if __name__ == "__main__":
     n_tokens = np.array([])
     print(rc_size)
     # Training set sizes
-    training_set_sizes = np.arange(1, args.max+1, args.step)
+    training_set_sizes = np.arange(args.min, args.max+1, args.step)
 
     # For each training size
     for training_size in training_set_sizes:
