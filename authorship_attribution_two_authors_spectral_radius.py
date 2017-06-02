@@ -45,7 +45,7 @@ from core.tools.RCNLPPlotGenerator import RCNLPPlotGenerator
 
 # Exp. info
 ex_name = "Authorship Attribution"
-ex_instance = "Two Authors Exploring Spectral Radius"
+ex_instance = "Two Authors Exploring Leaky Rate"
 
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
@@ -89,9 +89,9 @@ if __name__ == "__main__":
     parser.add_argument("--pca-model", type=str, help="PCA model to load", default=None)
     parser.add_argument("--in-components", type=int, help="Number of principal component to reduce inputs to.",
                         default=-1)
-    parser.add_argument("--step", type=float, help="Step for reservoir size value", default=50)
-    parser.add_argument("--min", type=float, help="Minimum reservoir size value", default=10)
-    parser.add_argument("--max", type=float, help="Maximum reservoir size value", default=1000)
+    parser.add_argument("--step", type=float, help="Step for spectral radius value", default=50)
+    parser.add_argument("--min", type=float, help="Minimum spectral radius value", default=10)
+    parser.add_argument("--max", type=float, help="Maximum spectral radius value", default=1000)
     parser.add_argument("--training-size", type=int, help="Training size", default=90)
     parser.add_argument("--sentence", action='store_true', help="Test sentence classification rate?", default=False)
     parser.add_argument("--k", type=int, help="n-Fold Cross Validation.", default=10)
@@ -130,15 +130,15 @@ if __name__ == "__main__":
     indexes.shape = (args.k, n_fold_samples)
 
     # Leaky rates
-    leaky_rates = np.arange(args.min, args.max+args.step, args.step)
+    spectral_radiuses = np.arange(args.min, args.max+args.step, args.step)
 
     # W matrix
     w = mdp.numx.random.choice([0.0, 1.0], (rc_size, rc_size), p=[1.0 - rc_w_sparsity, rc_w_sparsity])
     w[w == 1] = mdp.numx.random.rand(len(w[w == 1]))
 
-    # For each reservoir size
-    for leaky_rate in leaky_rates:
-        print("Leaky rate %f" % leaky_rate)
+    # For each spectral radius
+    for spectral_radius in spectral_radiuses:
+        print("Spectral radius %f" % spectral_radius)
 
         # Average success rate for this leaky rate
         leaky_rate_average_success_rate = np.array([])
@@ -152,9 +152,9 @@ if __name__ == "__main__":
             training_set_indexes.shape = (100 - n_fold_samples)
 
             # >> 6. Create Echo Word Classifier
-            classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=leaky_rate,
+            classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
                                                  input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
-                                                 spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity, w=w)
+                                                 spectral_radius=spectral_radius, w_sparsity=rc_w_sparsity, w=w)
 
             # >> 7. Add examples
             for author_index, author_id in enumerate((args.author1, args.author2)):
@@ -192,7 +192,7 @@ if __name__ == "__main__":
         # end for
 
         # >> 10. Log success
-        logging.save_results("Leaky rate ", leaky_rate, display=True)
+        logging.save_results("Leaky rate ", spectral_radius, display=True)
         logging.save_results("Success rate ", np.average(leaky_rate_average_success_rate), display=True)
         logging.save_results("Success rate std ", np.std(leaky_rate_average_success_rate), display=True)
 
@@ -203,18 +203,18 @@ if __name__ == "__main__":
     # end for
 
     for index, success_rate in enumerate(success_rate_avg):
-        print("(%d, %f)" % (leaky_rates[index], success_rate))
+        print("(%d, %f)" % (spectral_radiuses[index], success_rate))
     # end for
 
     for index, success_rate in enumerate(success_rate_std):
-        print("(%d, %f)" % (leaky_rates[index], success_rate))
+        print("(%d, %f)" % (spectral_radiuses[index], success_rate))
     # end for
 
     # Plot perfs
     plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
     plot.add_sub_plot(title=ex_instance + ", success rates vs leaky rate.", x_label="Nb. tokens",
                       y_label="Success rates", ylim=[-10, 120])
-    plot.plot(y=success_rate_avg, x=leaky_rates, yerr=success_rate_std, label="Success rate", subplot=1,
+    plot.plot(y=success_rate_avg, x=spectral_radiuses, yerr=success_rate_std, label="Success rate", subplot=1,
               marker='o', color='b')
     logging.save_plot(plot)
 
