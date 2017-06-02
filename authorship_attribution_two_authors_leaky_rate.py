@@ -45,7 +45,7 @@ from core.tools.RCNLPPlotGenerator import RCNLPPlotGenerator
 
 # Exp. info
 ex_name = "Authorship Attribution"
-ex_instance = "Two Authors Exploring Training Size"
+ex_instance = "Two Authors Exploring Leaky Rate"
 
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
@@ -89,11 +89,12 @@ if __name__ == "__main__":
     parser.add_argument("--pca-model", type=str, help="PCA model to load", default=None)
     parser.add_argument("--in-components", type=int, help="Number of principal component to reduce inputs to.",
                         default=-1)
-    parser.add_argument("--samples", type=int, help="Samples", default=20)
-    parser.add_argument("--step", type=int, help="Step for training size value", default=5)
-    parser.add_argument("--max", type=int, help="Max training size", default=95)
-    parser.add_argument("--min", type=int, help="Min training size", default=1)
+    parser.add_argument("--step", type=float, help="Step for reservoir size value", default=50)
+    parser.add_argument("--min", type=float, help="Minimum reservoir size value", default=10)
+    parser.add_argument("--max", type=float, help="Maximum reservoir size value", default=1000)
+    parser.add_argument("--training-size", type=int, help="Training size", default=90)
     parser.add_argument("--sentence", action='store_true', help="Test sentence classification rate?", default=False)
+    parser.add_argument("--k", type=int, help="n-Fold Cross Validation.", default=10)
     args = parser.parse_args()
 
     # Logging
@@ -122,112 +123,98 @@ if __name__ == "__main__":
     # >> 3. Array for results
     success_rate_avg = np.array([])
     success_rate_std = np.array([])
-    n_tokens = np.array([])
-    print(rc_size)
-    # Training set sizes
-    training_set_sizes = np.arange(args.min, args.max+1, args.step)
 
-    # For each training size
-    for training_size in training_set_sizes:
-        #logging.save_results("Training size ", training_size, display=True)
+    # >> 2. Prepare training and test set indexes.
+    n_fold_samples = int(100 / args.k)
+    indexes = np.arange(0, 100, 1)
+    indexes.shape = (args.k, n_fold_samples)
 
-        # Average success rate for this training size
-        training_size_average_success_rate = np.array([])
-        n_token = 0
+    # Leaky rates
+    leaky_rates = np.arange(args.min, args.max+args.step, args.step)
 
-        # >> 4. Try n time
-        for s in range(0, args.samples):
-            try:
-                # >> 5. Prepare training and test set.
-                training_set_indexes = np.arange(0, training_size, 1)
-                test_set_indexes = np.arange(training_size, 100, 1)
-                n_token = 0
+    # W matrix
+    w = mdp.numx.random.choice([0.0, 1.0], (rc_size, rc_size), p=[1.0 - rc_w_sparsity, rc_w_sparsity])
+    w[w == 1] = mdp.numx.random.rand(len(w[w == 1]))
 
-                # >> 6. Create Echo Word Classifier
-                classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
-                                                     input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
-                                                     spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
+    # For each reservoir size
+    for leaky_rate in leaky_rates:
+        print("Leaky rate %f" % leaky_rate)
 
-                # >> 7. Add authors examples
-                for author_index, author_id in enumerate((args.author1, args.author2)):
-                    author_path = os.path.join(args.dataset, "total", str(author_id))
-                    for file_index in training_set_indexes:
-                        file_path = os.path.join(author_path, str(file_index) + ".txt")
-                        classifier.add_example(file_path, author_index)
-                        n_token += get_n_token(file_path)
+        # Average success rate for this leaky rate
+        leaky_rate_average_success_rate = np.array([])
+
+        # >> 4. n-Fold cross validation
+        for k in range(0, args.k):
+            # >> 5. Prepare training and test set.
+            test_set_indexes = indexes[k]
+            training_set_indexes = indexes
+            training_set_indexes = np.delete(training_set_indexes, k, axis=0)
+            training_set_indexes.shape = (100 - n_fold_samples)
+
+            # >> 6. Create Echo Word Classifier
+            classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=leaky_rate,
+                                                 input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
+                                                 spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity, w=w)
+
+            # >> 7. Add examples
+            for author_index, author_id in enumerate((args.author1, args.author2)):
+                author_path = os.path.join(args.dataset, "total", author_id)
+                for file_index in training_set_indexes:
+                    classifier.add_example(os.path.join(author_path, str(file_index) + ".txt"), author_index)
                     # end for
-                # end for
+            # end for
 
-                # >> 8. Train model
-                classifier.train()
+            # >> 8. Train model
+            classifier.train()
 
-                # >> 9. Test model performance
-                success = 0.0
-                count = 0.0
-                for author_index, author_id in enumerate((args.author1, args.author2)):
-                    author_path = os.path.join(args.dataset, "total", str(author_id))
-                    for file_index in test_set_indexes:
-                        file_path = os.path.join(author_path, str(file_index) + ".txt")
-
-                        # Success rate
-                        if not args.sentence:
-                            author_pred, _, _ = classifier.pred(file_path)
-                            if author_pred == author_index:
-                                success += 1.0
-                            # end if
-                            count += 1.0
-                        else:
-                            # Sentence success rate
-                            nlp = spacy.load(args.lang)
-                            doc = nlp(io.open(file_path, 'r').read())
-                            for sentence in doc.sents:
-                                sentence_pred, _, _ = classifier.pred_text(sentence.text)
-                                if sentence_pred == author_index:
-                                    success += 1.0
-                                # end if
-                                count += 1.0
-                            # end for
-                        # end if
+            # >> 9. Test model performance
+            success = 0.0
+            count = 0.0
+            for author_index, author_id in enumerate((args.author1, args.author2)):
+                author_path = os.path.join(args.dataset, "total", author_id)
+                for file_index in test_set_indexes:
+                    author_pred, _, _ = classifier.pred(os.path.join(author_path, str(file_index) + ".txt"), show_graph=False)
+                    if author_pred == author_index:
+                        success += 1.0
+                    # end if
+                    count += 1.0
                     # end for
-                # end for
+            # end for
 
-                # >> 11. Save results
-                print((success / count) * 100.0)
-                training_size_average_success_rate = np.append(training_size_average_success_rate,
-                                                               [(success / count) * 100.0])
+            # >> 10. Log success
+            logging.save_results("Success rate ", (success / count) * 100.0, display=True)
 
-                # Delete variables
-                del classifier
-            except:
-                pass
-            # end try
+            # >> 11. Save results
+            leaky_rate_average_success_rate = np.append(leaky_rate_average_success_rate, [(success / count) * 100.0])
+
+            # Delete variables
+            del classifier
         # end for
 
         # >> 10. Log success
-        logging.save_results("Training size ", training_size, display=True)
-        logging.save_results("Tokens ", n_token, display=True)
-        logging.save_results("Success rate ", np.average(training_size_average_success_rate), display=True)
-        logging.save_results("Success rate std ", np.std(training_size_average_success_rate), display=True)
+        logging.save_results("Leaky rate ", leaky_rate, display=True)
+        logging.save_results("Success rate ", np.average(leaky_rate_average_success_rate), display=True)
+        logging.save_results("Success rate std ", np.std(leaky_rate_average_success_rate), display=True)
 
         # Save results
-        success_rate_avg = np.append(success_rate_avg, np.average(training_size_average_success_rate))
-        success_rate_std = np.append(success_rate_std, np.std(training_size_average_success_rate))
-        n_tokens = np.append(n_tokens, [n_token])
+        success_rate_avg = np.append(success_rate_avg, np.average(leaky_rate_average_success_rate))
+        success_rate_std = np.append(success_rate_std, np.std(leaky_rate_average_success_rate))
+
     # end for
 
     for index, success_rate in enumerate(success_rate_avg):
-        print("(%d, %f)" % (n_tokens[index], success_rate))
+        print("(%d, %f)" % (leaky_rates[index], success_rate))
     # end for
 
-    for index, success_rate_std in enumerate(success_rate_std):
-        print("(%d, %f)" % (n_tokens[index], success_rate_std))
+    for index, success_rate in enumerate(success_rate_std):
+        print("(%d, %f)" % (leaky_rates[index], success_rate))
     # end for
 
     # Plot perfs
     plot = RCNLPPlotGenerator(title=ex_name, n_plots=1)
-    plot.add_sub_plot(title=ex_instance + ", success rates vs training size.", x_label="Nb. tokens",
+    plot.add_sub_plot(title=ex_instance + ", success rates vs leaky rate.", x_label="Nb. tokens",
                       y_label="Success rates", ylim=[-10, 120])
-    plot.plot(y=success_rate_avg, x=n_tokens, yerr=success_rate_std, label="Success rate", subplot=1,
+    plot.plot(y=success_rate_avg, x=leaky_rates, yerr=success_rate_std, label="Success rate", subplot=1,
               marker='o', color='b')
     logging.save_plot(plot)
 
