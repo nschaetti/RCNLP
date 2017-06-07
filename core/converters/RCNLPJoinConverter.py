@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# File : core.classifiers.RCNLPTextClassifier.py
+# File : core.classifiers.RCNLPContainerConverter.py
 # Description : Echo State Network for text classification.
 # Auteur : Nils Schaetti <nils.schaetti@unine.ch>
 # Date : 01.02.2017 17:59:05
@@ -24,31 +24,39 @@
 
 import numpy as np
 import spacy
+import scipy.signal as sig
 from RCNLPConverter import RCNLPConverter
 
 
-class RCNLPPosConverter(RCNLPConverter):
+class RCNLPJoinConverter(RCNLPConverter):
     """
-    Convert text to Part-Of-Speech symbols.
+    Join two converters
     """
 
-    # Get tags
-    def get_tags(self):
+    # Constructor
+    def __init__(self, conv1, conv2, lang='en', tag_to_symbol=None, resize=-1, pca_model=None):
         """
-        Get tags.
-        :return: A list of tags.
+        Constructor
+        :param conv1: First converter
+        :param conv2: Second converter
+        :param lang: Language model
+        :param tag_to_symbol: Tag to symbol conversion array.
+        :param resize: Reduce dimensionality.
         """
-        return [u"ADJ", u"ADP", u"ADV", u"CCONJ", u"DET", u"INTJ", u"NOUN", u"NUM", u"PART", u"PRON", u"PROPN", u"PUNCT",
-               u"SYM", u"VERB", u"X"]
-    # end get_tags
+        super(RCNLPJoinConverter, self).__init__(lang, tag_to_symbol, resize, pca_model)
+
+        # Converters
+        self._conv1 = conv1
+        self._conv2 = conv2
+    # end __init__
 
     # Get the number of inputs
     def _get_inputs_size(self):
         """
-        Get the number of inputs.
-        :return: The number of inputs.
+        Get the input size.
+        :return: The input size.
         """
-        return len(self.get_tags())
+        return self._conv1.get_n_inputs() + self._conv2.get_n_inputs()
     # end get_n_inputs
 
     # Convert a string to a ESN input
@@ -59,30 +67,13 @@ class RCNLPPosConverter(RCNLPConverter):
         :return: An numpy array of inputs.
         """
 
-        # Load language model
-        nlp = spacy.load(self._lang)
+        # Converted text 1
+        conv1_text = self._conv1(text, exclude, word_exclude)
 
-        # Process text
-        doc = nlp(text)
+        # Converted text 2
+        conv2_text = self._conv2(text, exclude, word_exclude)
 
-        # Resulting numpy array
-        doc_array = np.array([])
-
-        # For each words
-        for index, word in enumerate(doc):
-            if word.pos_ not in exclude and word not in word_exclude:
-                sym = self.tag_to_symbol(word.pos_)
-                if sym is not None:
-                    if index == 0:
-                        doc_array = sym
-                    else:
-                        doc_array = np.vstack((doc_array, sym))
-                    # end if
-                # end if
-            # end if
-        # end for
-
-        return self.reduce(doc_array)
+        return np.hstack((conv1_text, conv2_text))
     # end convert
 
 # end RCNLPConverter

@@ -32,6 +32,18 @@ class RCNLPFuncWordConverter(RCNLPConverter):
     Convert text to function word symbols.
     """
 
+    # Constructor
+    def __init__(self, lang='en', tag_to_symbol=None, resize=-1, pca_model=None, fill_in=False):
+        """
+        Constructor
+        :param lang: Language model
+        :param tag_to_symbol: Tag to symbol conversion array.
+        :param resize: Reduce dimensionality.
+        """
+        super(RCNLPFuncWordConverter, self).__init__(lang, tag_to_symbol, resize, pca_model)
+        self._fill_in = fill_in
+    # end __init__
+
     # Get tags
     def get_tags(self):
         """
@@ -97,11 +109,17 @@ class RCNLPFuncWordConverter(RCNLPConverter):
         # Resulting numpy array
         doc_array = np.array([])
 
+        # Null symbol
+        null_symbol = np.zeros((1, len(self.get_tags())))
+
         # For each words
         init = False
         for index, word in enumerate(doc):
             if word not in word_exclude:
                 sym = self.tag_to_symbol(word.text)
+                if sym is None and self._fill_in:
+                    sym = null_symbol
+                # end if
                 if sym is not None:
                     if not init:
                         doc_array = sym
