@@ -43,7 +43,7 @@ class RCNLPJoinConverter(RCNLPConverter):
         :param tag_to_symbol: Tag to symbol conversion array.
         :param resize: Reduce dimensionality.
         """
-        super(RCNLPJoinConverter).__init__(lang, tag_to_symbol, resize, pca_model)
+        super(RCNLPJoinConverter, self).__init__(lang, tag_to_symbol, resize, pca_model)
 
         # Converters
         self._conv1 = conv1

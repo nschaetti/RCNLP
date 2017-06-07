@@ -80,7 +80,7 @@ def create_converters(r, in_size):
     elif r == "tag":
         converter = RCNLPTagConverter(resize=-1, pca_model=pca_model)
     elif r == "fw":
-        converter = RCNLPFuncWordConverter(resize=-1, pca_model=pca_model)
+        converter = RCNLPFuncWordConverter(resize=-1, pca_model=pca_model, fill_in=True)
     else:
         converter = RCNLPWordVectorConverter(resize=-1, pca_model=pca_model)
     # end if
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     reps = dict()
     reps['pos'] = [-1]
     reps['tag'] = [-1, 20]
-    reps['fw'] = [-1, 60, 40, 20]
+    reps['fw'] = [-1, 60, 40]
     reps['wv'] = [-1, 60, 40, 20]
 
     # First representations
@@ -142,9 +142,7 @@ if __name__ == "__main__":
 
                         # Join converter
                         converter = RCNLPJoinConverter(conv1, conv2)
-                        syms = converter("Hi, what are you doing?")
-                        print(syms.shape)
-                        exit()
+                        syms = converter(u"Hello, what are you doing?")
 
                         # Array for results
                         average_success_rate = np.array([])

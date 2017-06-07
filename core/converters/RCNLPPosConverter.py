@@ -38,7 +38,7 @@ class RCNLPPosConverter(RCNLPConverter):
         Get tags.
         :return: A list of tags.
         """
-        return [u"ADJ", u"ADP", u"ADV", u"CCONJ", u"DET", u"NOUN", u"NUM", u"PART", u"PRON", u"PROPN", u"PUNCT",
+        return [u"ADJ", u"ADP", u"ADV", u"CCONJ", u"DET", u"INTJ", u"NOUN", u"NUM", u"PART", u"PRON", u"PROPN", u"PUNCT",
                u"SYM", u"VERB", u"X"]
     # end get_tags
 
