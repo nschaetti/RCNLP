@@ -48,7 +48,7 @@ ex_name = "Authorship Attribution"
 ex_instance = "Two Authors Exploring Leaky Rate"
 
 # Reservoir Properties
-rc_leak_rate = 0.1  # Leak rate
+rc_leak_rate = 0.051  # Leak rate
 rc_input_scaling = 0.25  # Input scaling
 rc_size = 100  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
