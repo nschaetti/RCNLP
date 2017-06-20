@@ -71,6 +71,7 @@ if __name__ == "__main__":
     parser.add_argument("--test-size", type=int, help="Test size.", default=40)
     parser.add_argument("--samples", type=int, help="Number of samples to use to assess accuracy.", default=20)
     parser.add_argument("--lang", type=str, help="Language (ar, en, es, pt)", default='en')
+    parser.add_argument("--pca-model", type=str, help="PCA model to load", default="")
     args = parser.parse_args()
 
     # Logging
@@ -88,6 +89,6 @@ if __name__ == "__main__":
     # Converter
     converter = LetterConverter(resize=-1, pca_model=pca_model)
 
-    print(converter("coucou"))
+    print(converter("coucou salut"))
 
 # end if

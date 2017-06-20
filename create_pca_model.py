@@ -32,6 +32,7 @@ from core.converters.RCNLPPosConverter import RCNLPPosConverter
 from core.converters.RCNLPTagConverter import RCNLPTagConverter
 from core.converters.RCNLPFuncWordConverter import RCNLPFuncWordConverter
 from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
+from core.converters.LetterConverter import LetterConverter
 import io
 from sklearn.decomposition import PCA
 import pickle
@@ -62,6 +63,8 @@ if __name__ == "__main__":
         converter = RCNLPTagConverter()
     elif args.converter == "fw":
         converter = RCNLPFuncWordConverter()
+    elif args.converter == "letter":
+        converter = LetterConverter()
     else:
         converter = RCNLPWordVectorConverter()
     # end if
