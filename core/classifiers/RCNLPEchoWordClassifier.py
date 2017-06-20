@@ -121,7 +121,7 @@ class RCNLPEchoWordClassifier(object):
     # end train
 
     # Predict the class of a text
-    def pred(self, text_file, show_graph=False):
+    def pred(self, text_file, show_graph=False, print_outputs=False):
         # Get reservoir inputs
         x = self.generate_test_data_from_text(text_file)
 
@@ -130,16 +130,18 @@ class RCNLPEchoWordClassifier(object):
         y -= np.min(y)
         y /= np.max(y)
 
-        """for index, y_ in enumerate(y):
-            print("(%d, %f)" % (index, y_[0]))
-        # end for
-        print(np.average(y[:, 0]))
-        print("")
-        for index, y_ in enumerate(y):
-            print("(%d, %f)" % (index, y_[1]))
-        # end for
-        print(np.average(y[:, 1]))
-        exit()"""
+        if print_outputs:
+            for index, y_ in enumerate(y):
+                print("(%d, %f)" % (index, y_[0]))
+            # end for
+            print(np.average(y[:, 0]))
+            print("")
+            for index, y_ in enumerate(y):
+                print("(%d, %f)" % (index, y_[1]))
+            # end for
+            print(np.average(y[:, 1]))
+            return
+        # end if
 
         # Plot results
         if show_graph:

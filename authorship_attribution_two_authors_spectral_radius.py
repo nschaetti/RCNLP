@@ -173,12 +173,28 @@ if __name__ == "__main__":
             for author_index, author_id in enumerate((args.author1, args.author2)):
                 author_path = os.path.join(args.dataset, "total", author_id)
                 for file_index in test_set_indexes:
+                    file_path = os.path.join(author_path, str(file_index) + ".txt")
                     author_pred, _, _ = classifier.pred(os.path.join(author_path, str(file_index) + ".txt"), show_graph=False)
-                    if author_pred == author_index:
-                        success += 1.0
+                    # Success rate
+                    if not args.sentence:
+                        author_pred, _, _ = classifier.pred(os.path.join(author_path, str(file_index) + ".txt"))
+                        if author_pred == author_index:
+                            success += 1.0
+                        # end if
+                        count += 1.0
+                    else:
+                        # Sentence success rate
+                        nlp = spacy.load(args.lang)
+                        doc = nlp(io.open(file_path, 'r').read())
+                        for sentence in doc.sents:
+                            sentence_pred, _, _ = classifier.pred_text(sentence.text)
+                            if sentence_pred == author_index:
+                                success += 1.0
+                            # end if
+                            count += 1.0
+                        # end for
                     # end if
-                    count += 1.0
-                    # end for
+                # end for
             # end for
 
             # >> 10. Log success

@@ -194,6 +194,7 @@ if __name__ == "__main__":
                             count += 1.0
                         # end for
                     # end if
+                # end for
             # end for
 
             # >> 10. Log success

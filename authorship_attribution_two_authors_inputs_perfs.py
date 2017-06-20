@@ -34,6 +34,7 @@ from core.converters.RCNLPPosConverter import RCNLPPosConverter
 from core.converters.RCNLPTagConverter import RCNLPTagConverter
 from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
 from core.converters.RCNLPFuncWordConverter import RCNLPFuncWordConverter
+from core.converters.LetterConverter import LetterConverter
 from core.classifiers.RCNLPEchoWordClassifier import RCNLPEchoWordClassifier
 from core.tools.RCNLPLogging import RCNLPLogging
 
@@ -88,6 +89,7 @@ if __name__ == "__main__":
     reps['tag'] = [-1, 20]
     reps['fw'] = [-1, 60, 40, 20]
     reps['wv'] = [-1, 60, 40, 20]
+    reps['letter'] = [-1]
 
     # For each representations
     for r in reps.keys():
@@ -107,6 +109,8 @@ if __name__ == "__main__":
                 converter = RCNLPTagConverter(resize=-1, pca_model=pca_model)
             elif r == "fw":
                 converter = RCNLPFuncWordConverter(resize=-1, pca_model=pca_model)
+            elif r == "letter":
+                converter = LetterConverter(resize=-1, pca_model=pca_model)
             else:
                 converter = RCNLPWordVectorConverter(resize=-1, pca_model=pca_model)
             # end if
