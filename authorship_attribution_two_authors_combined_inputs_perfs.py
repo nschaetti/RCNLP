@@ -50,7 +50,7 @@ ex_instance = "Author Attribution"
 rc_leak_rate = 0.1  # Leak rate
 rc_input_scaling = 0.25  # Input scaling
 rc_size = 100  # Reservoir size
-rc_spectral_radius = 0.99  # Spectral radius
+rc_spectral_radius = 0.1  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.1
 
@@ -76,9 +76,9 @@ def create_converters(r, in_size):
 
     # >> 1. Choose a text to symbol converter.
     if r == "pos":
-        converter = RCNLPPosConverter(resize=-1, pca_model=pca_model)
+        converter = RCNLPPosConverter(resize=-1, pca_model=pca_model, fill_in=True)
     elif r == "tag":
-        converter = RCNLPTagConverter(resize=-1, pca_model=pca_model)
+        converter = RCNLPTagConverter(resize=-1, pca_model=pca_model, fill_in=True)
     elif r == "fw":
         converter = RCNLPFuncWordConverter(resize=-1, pca_model=pca_model, fill_in=True)
     else:
@@ -142,7 +142,6 @@ if __name__ == "__main__":
 
                         # Join converter
                         converter = RCNLPJoinConverter(conv1, conv2)
-                        syms = converter(u"Hello, what are you doing?")
 
                         # Array for results
                         average_success_rate = np.array([])
