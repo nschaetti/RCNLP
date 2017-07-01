@@ -49,7 +49,7 @@ ex_instance = "Author Attribution"
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
 rc_input_scaling = 0.25  # Input scaling
-rc_size = 100  # Reservoir size
+rc_size = 50  # Reservoir size
 rc_spectral_radius = 0.1  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.1
@@ -133,15 +133,19 @@ if __name__ == "__main__":
                 # For first size representation
                 for in_size1 in reps[r1]:
                     # For second size representation
-                    for in_size2 in reps[r2]:
+                    for in_size2 in reps[r2].insert(0, None):
                         print("For representations %s size %d + %s size %d" % (r1, in_size1, r2, in_size2))
 
                         # Create converters
                         conv1 = create_converters(r1, in_size1)
-                        conv2 = create_converters(r2, in_size2)
+                        if in_size2 is not None:
+                            conv2 = create_converters(r2, in_size2)
 
-                        # Join converter
-                        converter = RCNLPJoinConverter(conv1, conv2)
+                            # Join converter
+                            converter = RCNLPJoinConverter(conv1, conv2)
+                        else:
+                            converter = conv1
+                        # end if
 
                         # Array for results
                         average_success_rate = np.array([])
