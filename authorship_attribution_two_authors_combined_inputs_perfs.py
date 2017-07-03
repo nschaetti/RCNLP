@@ -30,6 +30,7 @@ import pickle
 import numpy as np
 import Oger
 import mdp
+from scipy import stats
 from core.converters.RCNLPPosConverter import RCNLPPosConverter
 from core.converters.RCNLPTagConverter import RCNLPTagConverter
 from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
@@ -117,6 +118,10 @@ if __name__ == "__main__":
     w = mdp.numx.random.choice([0.0, 1.0], (rc_size, rc_size), p=[1.0 - rc_w_sparsity, rc_w_sparsity])
     w[w == 1] = mdp.numx.random.rand(len(w[w == 1]))
 
+    # Init
+    original_size_perf = np.array([])
+    none_size_perf = np.array([])
+
     # Inputs
     reps = dict()
     reps['pos'] = [-1]
@@ -197,9 +202,23 @@ if __name__ == "__main__":
                             del classifier
                         # end for
 
+                        # Original size
+                        if in_size1 == -1 and in_size2 is None:
+                            original_size_perf = average_success_rate
+                        # end if
+
+                        # No additional representation
+                        if in_size2 is not None:
+                            none_size_perf = average_success_rate
+                        # end if
+
                         # Log results
                         logging.save_results("Average success rate ", np.average(average_success_rate), display=True)
                         logging.save_results("Success rate std ", np.std(average_success_rate), display=True)
+                        logging.save_results("Paired t-test again original size ",
+                                             stats.ttest_rel(original_size_perf, average_success_rate), display=True)
+                        logging.save_results("Paired t-test again first repr. alone",
+                                             stats.ttest_rel(none_size_perf, average_success_rate), display=True)
                     # end for
                 # end for
             # end if
