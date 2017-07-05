@@ -138,8 +138,12 @@ if __name__ == "__main__":
                 # For first size representation
                 for in_size1 in reps[r1]:
                     # For second size representation
-                    for in_size2 in reps[r2].insert(0, None):
-                        print("For representations %s size %d + %s size %d" % (r1, in_size1, r2, in_size2))
+                    for in_size2 in [None] + reps[r2]:
+                        if in_size2 is None:
+                            print("For representations %s size %d" % (r1, in_size1))
+                        else:
+                            print("For representations %s size %d + %s size %d" % (r1, in_size1, r2, in_size2))
+                        # end if
 
                         # Create converters
                         conv1 = create_converters(r1, in_size1)
@@ -209,7 +213,7 @@ if __name__ == "__main__":
                         # end if
 
                         # No additional representation
-                        if in_size2 is not None:
+                        if in_size2 is None:
                             print("None size")
                             none_size_perf = average_success_rate
                         # end if
@@ -218,9 +222,9 @@ if __name__ == "__main__":
                         logging.save_results("Average success rate ", np.average(average_success_rate), display=True)
                         logging.save_results("Success rate std ", np.std(average_success_rate), display=True)
                         logging.save_results("Paired t-test again original size ",
-                                             stats.ttest_rel(original_size_perf, average_success_rate), display=True)
+                                             stats.ttest_rel(original_size_perf, average_success_rate).pvalue * 100, display=True)
                         logging.save_results("Paired t-test again first repr. alone",
-                                             stats.ttest_rel(none_size_perf, average_success_rate), display=True)
+                                             stats.ttest_rel(none_size_perf, average_success_rate).pvalue * 100, display=True)
                     # end for
                 # end for
             # end if
