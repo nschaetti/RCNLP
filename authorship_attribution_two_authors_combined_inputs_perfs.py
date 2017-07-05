@@ -221,10 +221,16 @@ if __name__ == "__main__":
                         # Log results
                         logging.save_results("Average success rate ", np.average(average_success_rate), display=True)
                         logging.save_results("Success rate std ", np.std(average_success_rate), display=True)
-                        logging.save_results("Paired t-test again original size ",
-                                             stats.ttest_rel(original_size_perf, average_success_rate).pvalue * 100, display=True)
-                        logging.save_results("Paired t-test again first repr. alone",
-                                             stats.ttest_rel(none_size_perf, average_success_rate).pvalue * 100, display=True)
+                        if original_size_perf != average_success_rate:
+                            logging.save_results("Paired t-test again original size ",
+                                                 stats.ttest_rel(original_size_perf, average_success_rate).pvalue * 100,
+                                                 display=True)
+                        # end if
+                        if none_size_perf != average_success_rate:
+                            logging.save_results("Paired t-test again first repr. alone",
+                                                 stats.ttest_rel(none_size_perf, average_success_rate).pvalue * 100,
+                                                 display=True)
+                        # end if
                     # end for
                 # end for
             # end if
