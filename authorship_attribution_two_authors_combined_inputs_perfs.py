@@ -204,11 +204,13 @@ if __name__ == "__main__":
 
                         # Original size
                         if in_size1 == -1 and in_size2 is None:
+                            print("Original size")
                             original_size_perf = average_success_rate
                         # end if
 
                         # No additional representation
                         if in_size2 is not None:
+                            print("None size")
                             none_size_perf = average_success_rate
                         # end if
 
