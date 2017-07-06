@@ -50,7 +50,7 @@ ex_instance = "Author Attribution"
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
 rc_input_scaling = 0.25  # Input scaling
-rc_size = 50  # Reservoir size
+rc_size = 100  # Reservoir size
 rc_spectral_radius = 0.1  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.1
@@ -221,12 +221,12 @@ if __name__ == "__main__":
                         # Log results
                         logging.save_results("Average success rate ", np.average(average_success_rate), display=True)
                         logging.save_results("Success rate std ", np.std(average_success_rate), display=True)
-                        if (original_size_perf != average_success_rate).all():
+                        if not (original_size_perf == average_success_rate).all():
                             logging.save_results("Paired t-test again original size ",
                                                  stats.ttest_rel(original_size_perf, average_success_rate).pvalue * 100,
                                                  display=True)
                         # end if
-                        if (none_size_perf != average_success_rate).all():
+                        if not (none_size_perf == average_success_rate).all():
                             logging.save_results("Paired t-test again first repr. alone",
                                                  stats.ttest_rel(none_size_perf, average_success_rate).pvalue * 100,
                                                  display=True)
