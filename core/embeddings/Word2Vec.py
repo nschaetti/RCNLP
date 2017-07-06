@@ -28,7 +28,7 @@ class Word2Vec(object):
     """
 
     # Constructor
-    def __init__(self, dim=300, lang='en'):
+    def __init__(self, dim=300, lang='en', mapper='dense', sparsity=0.02):
         """
         Constructor
         """
@@ -36,6 +36,8 @@ class Word2Vec(object):
         self._lang = lang
         self._dim = dim
         self._voc = dict()
+        self._mapper = mapper
+        self._sparsity = sparsity
     # end __init__
 
     ###########################################
@@ -51,25 +53,29 @@ class Word2Vec(object):
         if word in self._voc.keys():
             raise WordAlreadyExistsException("The word already exists in the vocabulary")
         else:
-            self._voc[word] = np.random.random(self._dim)
+            if self._mapper == "dense":
+                self._voc[word] = Word2Vec.dense(self._dim)
+            else:
+                self._voc[word] = Word2Vec.sparse(self._dim, self._sparsity)
+            # end
         # end if
     # end create_word_vector
 
     # Get a word vector
-    def __getattr__(self, item):
+    def __getitem__(self, item):
         """
         Get a word vector.
         :param item: Item to retrieve, if does not exists, create it.
         :return: The attribute value
         """
-        if item not in self._voc:
+        if item not in self._voc.keys():
             self.create_word_vector(item)
         # end if
         return self._voc[item]
     # end __getattr__
 
     # Set a word vector
-    def __setattr__(self, word, vector):
+    def __setitem__(self, word, vector):
         """
         Set a word vector.
         :param word: Word to set
@@ -96,7 +102,11 @@ class Word2Vec(object):
 
         # For each word
         for word in doc:
-            doc_array = np.vstack((doc_array, self[word]))
+            if doc_array.size == 0:
+                doc_array = self[word]
+            else:
+                doc_array = np.vstack((doc_array, self[word]))
+            # end if
         # end for
 
         return doc_array
@@ -105,5 +115,30 @@ class Word2Vec(object):
     ###########################################
     # Private
     ###########################################
+
+    # Map word to a dense vector
+    @staticmethod
+    def dense(dim):
+        """
+        Map word to a dense mapper
+        :param dim: Vector dimension
+        :return: A new dense vector
+        """
+        return np.random.random(dim)
+    # end _dense_mapper
+
+    # Map word to a sparse vector
+    @staticmethod
+    def sparse(dim, sparsity):
+        """
+        Map word to a sparse mapper
+        :param dim: Vector dimension
+        :param sparsity: Vector sparsity
+        :return: A new dense vector
+        """
+        vec = np.zeros(dim)
+        vec[np.random.random(dim) > (1.0 - sparsity)] = 1.0
+        return vec
+    # end _dense_mapper
 
 # end Word2Vec
