@@ -59,4 +59,6 @@ if __name__ == "__main__":
     print(len(data[0]))
     print(data[0][0])
     print(data[0][1])
+
+    print(word2vec[u'DisneyLand'])
 # end if
