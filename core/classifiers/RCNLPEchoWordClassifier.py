@@ -163,6 +163,8 @@ class RCNLPEchoWordClassifier(object):
         else:
             return 1, np.average(y[:, 0]), np.average(y[:, 1])
         # end if
+
+        #return np.argmax(np.average(y, 0)), np.average(y, 0)
     # end pred
 
     # Predict the class of a string

@@ -24,6 +24,7 @@
 
 import argparse
 from core.embeddings.Word2Vec import Word2Vec
+from core.embeddings.WordPredictionDataset import WordPredictionDataset
 
 
 ####################################################
@@ -39,10 +40,23 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Word2Vec
-    word2vec = Word2Vec(dim=20, mapper='sparse', sparsity=0.15)
+    word2vec = Word2Vec(dim=10, mapper='sparse', sparsity=0.2)
 
-    doc_vectors = word2vec(u"Hello, what is your name?")
-    print(doc_vectors)
-    print(doc_vectors.shape)
+    # Wordprediction dataset generator
+    dataset = WordPredictionDataset(word2vec=word2vec)
 
+    # Add examples
+    dataset.add(u"Hello, what is your name?")
+    dataset.add(u"When do you want to go to Disneyland?")
+    dataset.add(u"Hi! What's up?")
+
+    # Data
+    data = dataset.get_dataset()
+
+    print(type(data))
+    print(len(data))
+    print(type(data[0]))
+    print(len(data[0]))
+    print(data[0][0])
+    print(data[0][1])
 # end if

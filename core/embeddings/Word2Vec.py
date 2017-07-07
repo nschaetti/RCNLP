@@ -44,6 +44,15 @@ class Word2Vec(object):
     # Public
     ###########################################
 
+    # Get dimension
+    def get_dimension(self):
+        """
+        Get dimension
+        :return:
+        """
+        return self._dim
+    # end get_dimension
+
     # Create a new word vector randomly
     def create_word_vector(self, word):
         """
@@ -68,6 +77,7 @@ class Word2Vec(object):
         :param item: Item to retrieve, if does not exists, create it.
         :return: The attribute value
         """
+        item = item.lower()
         if item not in self._voc.keys():
             self.create_word_vector(item)
         # end if
@@ -81,6 +91,7 @@ class Word2Vec(object):
         :param word: Word to set
         :param vector: New word's vector
         """
+        word = word.lower()
         self._voc[word] = vector
     # end if
 
@@ -103,9 +114,9 @@ class Word2Vec(object):
         # For each word
         for word in doc:
             if doc_array.size == 0:
-                doc_array = self[word]
+                doc_array = self[word.text]
             else:
-                doc_array = np.vstack((doc_array, self[word]))
+                doc_array = np.vstack((doc_array, self[word.text]))
             # end if
         # end for
 
