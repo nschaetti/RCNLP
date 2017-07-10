@@ -105,7 +105,7 @@ if __name__ == "__main__":
         pca_model = pickle.load(open(args.pca_model, 'r'))
     # end if
 
-    # >> Choose a text to symbol converter.
+    # Choose a text to symbol converter.
     if args.converter == "pos":
         converter = RCNLPPosConverter(resize=args.in_components, pca_model=pca_model)
     elif args.converter == "tag":
@@ -148,9 +148,9 @@ if __name__ == "__main__":
         training_set_indexes.shape = (n_texts - n_fold_samples)
 
         # Create Echo Word Classifier
-        """classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
+        classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
                                              input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
-                                             spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)"""
+                                             spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
 
         # Add examples
         print(u"Adding examples...")
@@ -161,13 +161,12 @@ if __name__ == "__main__":
             else:
                 training_text_author = "Unknown"
             # end if
-            print(u"Training text in {} as author {}".format(training_text_path, training_text_author))
-            #classifier.add_example(training_text_path, training_text_author)
+            classifier.add_example(training_text_path, training_text_author)
         # end for
 
         # Train model
         print(u"Training...")
-        #classifier.train()
+        classifier.train()
 
         # Test model performance
         success = 0.0
@@ -179,19 +178,18 @@ if __name__ == "__main__":
             else:
                 observed_author = "Unknown"
             # end if
-            print(u"Test text in {} as author {}".format(test_text_path, observed_author))
-            """predicted_author = classifier.pred(test_text_path)
+            predicted_author = classifier.pred(test_text_path)
             if observed_author == predicted_author:
                 success += 1
             # end if
-            count += 1"""
+            count += 1
         # end for
 
-        # >> 11. Save results
+        # >> Save results
         average_success_rate = np.append(average_success_rate, [(success / count) * 100.0])
 
         # Delete variables
-        #del classifier
+        del classifier
     # end for
 
     # Log results
