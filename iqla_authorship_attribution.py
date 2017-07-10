@@ -78,7 +78,6 @@ def get_combinations(n_authors, n_samples):
 ####################################################
 
 if __name__ == "__main__":
-
     # Argument parser
     parser = argparse.ArgumentParser(description="RCNLP - Authorship attribution witn ESN on the IQLA dataset")
 
@@ -147,22 +146,21 @@ if __name__ == "__main__":
         training_set_indexes.shape = (n_texts - n_fold_samples)
 
         # Create Echo Word Classifier
-        """classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
+        classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
                                              input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
-                                             spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)"""
+                                             spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
 
         # Add examples
         print(u"Adding examples...")
         for training_index in training_set_indexes:
             training_text_path = os.path.join(args.dataset, text_codes[training_index] + ".txt")
             training_text_author = texts_data[text_codes[training_index]]
-            print(u"Training text in {} as author {}".format(training_text_path, training_text_author))
-            #classifier.add_example(training_text_path, training_text_author)
+            classifier.add_example(training_text_path, training_text_author)
         # end for
 
         # Train model
         print(u"Training...")
-        #classifier.train()
+        classifier.train()
 
         # Test model performance
         success = 0.0
@@ -170,23 +168,21 @@ if __name__ == "__main__":
         for test_index in test_set_indexes:
             test_text_path = os.path.join(args.dataset, text_codes[test_index] + ".txt")
             observed_author = texts_data[text_codes[test_index]]
-            print(u"Test text in {} as author {}".format(test_text_path, observed_author))
-            """predicted_author = classifier.pred(test_text_path)
+            predicted_author = classifier.pred(test_text_path)
             if observed_author == predicted_author:
                 success += 1
             # end if
-            count += 1"""
+            count += 1
         # end for
 
         # >> 11. Save results
         average_success_rate = np.append(average_success_rate, [(success / count) * 100.0])
 
         # Delete variables
-        #del classifier
+        del classifier
     # end for
 
     # Log results
     logging.save_results(u"Average success rate ", np.average(average_success_rate), display=True)
     logging.save_results(u"Success rate std ", np.std(average_success_rate), display=True)
-
 # end if
