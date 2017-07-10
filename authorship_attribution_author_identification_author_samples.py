@@ -30,6 +30,7 @@ import pickle
 import numpy as np
 import Oger
 import spacy
+import mdp
 from core.converters.RCNLPPosConverter import RCNLPPosConverter
 from core.converters.RCNLPTagConverter import RCNLPTagConverter
 from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
@@ -64,8 +65,6 @@ if __name__ == "__main__":
 
     # Argument
     parser.add_argument("--dataset", type=str, help="Dataset's directory.")
-    parser.add_argument("--n-authors", type=int, help="Number of authors.", default=50)
-    parser.add_argument("--samples", type=int, help="Number of samples to use to assess accuracy.", default=20)
     parser.add_argument("--training-size", type=int, help="Number of texts to train the model.", default=2)
     parser.add_argument("--test-size", type=int, help="Number of texts to assess the model.", default=20)
     parser.add_argument("--lang", type=str, help="Language (ar, en, es, pt)", default='en')
@@ -106,74 +105,93 @@ if __name__ == "__main__":
     training_set_indexes = np.arange(0, args.training_size, 1)
     test_set_indexes = np.arange(args.training_size, args.training_size + args.test_size, 1)
 
-    # >> 4. For each samples
-    for s in range(0, args.samples):
+    # Generate W
+    w = mdp.numx.random.choice([0.0, 1.0], (rc_size, rc_size), p=[1.0 - rc_w_sparsity, rc_w_sparsity])
+    w[w == 1] = mdp.numx.random.rand(len(w[w == 1]))
+
+    # For each authors
+    for author in np.arange(1, 51, 1):
         # >> 6. Create Echo Word Classifier
         classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
                                              input_sparsity=rc_input_sparsity, converter=converter,
-                                             n_classes=args.n_authors,
-                                             spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
+                                             n_classes=2,
+                                             spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity, w=w)
 
-        # >> 7. Add examples
-        for author_index, author_id in enumerate(np.arange(1, args.n_authors+1, 1)):
-            author_path = os.path.join(args.dataset, "total", author_id)
-            for file_index in training_set_indexes:
-                classifier.add_example(os.path.join(author_path, str(file_index) + ".txt"), author_index)
-            # end for
+        # >> 7. Positive examples
+        author_path = os.path.join(args.dataset, "total", author)
+        for file_index in training_set_indexes:
+            classifier.add_example(os.path.join(author_path, str(file_index) + ".txt"), 0)
+        # end for
+
+        # Negative examples
+        for file_index in training_set_indexes:
+            negative_authors = np.arange(1, 51, 1)
+            np.delete(negative_authors, author)
+            author_path = os.path.join(args.dataset, "total", np.random.choice(negative_authors, 1)[0])
+            classifier.add_example(os.path.join(author_path, str(file_index) + ".txt"), 1)
         # end for
 
         # >> 8. Train model
         classifier.train()
 
-        # >> 9. Test model performance
+        # >> 9. Test truth author
         success = 0.0
         count = 0.0
-        for author_index, author_id in enumerate(np.arange(1, args.n_authors+1, 1)):
-            author_path = os.path.join(args.dataset, "total", author_id)
-            for file_index in test_set_indexes:
-                file_path = os.path.join(author_path, str(file_index) + ".txt")
+        author_path = os.path.join(args.dataset, "total", author)
+        for file_index in test_set_indexes:
+            file_path = os.path.join(author_path, str(file_index) + ".txt")
 
-                # Document success rate
-                if not args.sentence:
-                    author_pred, _ = classifier.pred(file_path)
-                    if author_pred == author_index:
+            # Document success rate
+            if not args.sentence:
+                author_pred, _ = classifier.pred(file_path)
+                if author_pred == 0:
+                    success += 1.0
+                # end if
+                count += 1.0
+            else:
+                # Sentence success rate
+                nlp = spacy.load(args.lang)
+                doc = nlp(io.open(file_path, 'r').read())
+                for sentence in doc.sents:
+                    sentence_pred, _ = classifier.pred_text(sentence.text)
+                    if sentence_pred == 0:
                         success += 1.0
                     # end if
                     count += 1.0
-                else:
-                    # Sentence success rate
-                    nlp = spacy.load(args.lang)
-                    doc = nlp(io.open(file_path, 'r').read())
-                    for sentence in doc.sents:
-                        sentence_pred, _ = classifier.pred_text(sentence.text)
-                        if sentence_pred == author_index:
-                            success += 1.0
-                        # end if
-                        count += 1.0
-                    # end for
-                # end if
+                # end for
+            # end if
+        # end for
 
-            # end for
+        # Test engative authors
+        negative_authors = np.arange(1, 51, 1)
+        np.delete(negative_authors, author)
+        for file_index in test_set_indexes:
+            author_path = os.path.join(args.dataset, "total", np.random.choice(negative_authors, 1)[0])
+            file_path = os.path.join(author_path, str(file_index) + ".txt")
+
+            # Document success rate
+            if not args.sentence:
+                author_pred, _ = classifier.pred(file_path)
+                if author_pred == 1:
+                    success += 1.0
+                # end if
+                count += 1.0
+            else:
+                # Sentence success rate
+                nlp = spacy.load(args.lang)
+                doc = nlp(io.open(file_path, 'r').read())
+                for sentence in doc.sents:
+                    sentence_pred, _ = classifier.pred_text(sentence.text)
+                    if sentence_pred == 1:
+                        success += 1.0
+                    # end if
+                    count += 1.0
+                # end for
+            # end if
         # end for
 
         # >> 10. Log success
         logging.save_results("Success rate ", (success / count) * 100.0, display=True)
-
-        # >> 11. Save results
-        average_success_rate = np.append(average_success_rate, [(success / count) * 100.0])
-
-        # Delete variables
-        del classifier
     # end for
-
-    # Log results
-    logging.save_results("Average success rate ", np.average(average_success_rate), display=True)
-    logging.save_results("Success rate std ", np.std(average_success_rate), display=True)
-
-    # Plot histogram
-    bins = np.linspace(0, 100, 40)
-    plt.hist(average_success_rate, bins, label="Success rate distribution")
-    plt.legend(loc='upper right')
-    plt.show()
 
 # end if

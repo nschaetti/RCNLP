@@ -30,6 +30,7 @@ import pickle
 import numpy as np
 import Oger
 import spacy
+import mdp
 from core.converters.RCNLPPosConverter import RCNLPPosConverter
 from core.converters.RCNLPTagConverter import RCNLPTagConverter
 from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
@@ -64,7 +65,6 @@ if __name__ == "__main__":
 
     # Argument
     parser.add_argument("--dataset", type=str, help="Dataset's directory.")
-    parser.add_argument("--n-authors", type=int, help="Number of authors.", default=50)
     parser.add_argument("--samples", type=int, help="Number of samples to use to assess accuracy.", default=20)
     parser.add_argument("--training-size", type=int, help="Number of texts to train the model.", default=2)
     parser.add_argument("--test-size", type=int, help="Number of texts to assess the model.", default=20)
@@ -106,16 +106,20 @@ if __name__ == "__main__":
     training_set_indexes = np.arange(0, args.training_size, 1)
     test_set_indexes = np.arange(args.training_size, args.training_size + args.test_size, 1)
 
+    # Generate W
+    w = mdp.numx.random.choice([0.0, 1.0], (rc_size, rc_size), p=[1.0 - rc_w_sparsity, rc_w_sparsity])
+    w[w == 1] = mdp.numx.random.rand(len(w[w == 1]))
+
     # >> 4. For each samples
-    for s in range(0, args.samples):
+    for n_authors in np.arange(2, 51, 2):
         # >> 6. Create Echo Word Classifier
         classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
                                              input_sparsity=rc_input_sparsity, converter=converter,
-                                             n_classes=args.n_authors,
-                                             spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
+                                             n_classes=n_authors,
+                                             spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity, w=w)
 
         # >> 7. Add examples
-        for author_index, author_id in enumerate(np.arange(1, args.n_authors+1, 1)):
+        for author_index, author_id in enumerate(np.arange(1, n_authors+1, 1)):
             author_path = os.path.join(args.dataset, "total", author_id)
             for file_index in training_set_indexes:
                 classifier.add_example(os.path.join(author_path, str(file_index) + ".txt"), author_index)
@@ -128,7 +132,7 @@ if __name__ == "__main__":
         # >> 9. Test model performance
         success = 0.0
         count = 0.0
-        for author_index, author_id in enumerate(np.arange(1, args.n_authors+1, 1)):
+        for author_index, author_id in enumerate(np.arange(1, n_authors+1, 1)):
             author_path = os.path.join(args.dataset, "total", author_id)
             for file_index in test_set_indexes:
                 file_path = os.path.join(author_path, str(file_index) + ".txt")
@@ -157,6 +161,7 @@ if __name__ == "__main__":
         # end for
 
         # >> 10. Log success
+        print("{} authors".format(n_authors))
         logging.save_results("Success rate ", (success / count) * 100.0, display=True)
 
         # >> 11. Save results

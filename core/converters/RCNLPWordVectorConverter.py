@@ -71,6 +71,9 @@ class RCNLPWordVectorConverter(RCNLPConverter):
             # end if
         # end for
 
+        # Del spacy nlp
+        del nlp
+
         return self.reduce(doc_array)
     # end convert
 
