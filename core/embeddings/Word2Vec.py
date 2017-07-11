@@ -53,6 +53,24 @@ class Word2Vec(object):
         return self._dim
     # end get_dimension
 
+    # Get lang
+    def get_lang(self):
+        """
+        Get lang.
+        :return:
+        """
+        return self._lang
+    # end get_lang
+
+    # Words
+    def words(self):
+        """
+        Words
+        :return:
+        """
+        return self._voc.keys()
+    # end words
+
     # Create a new word vector randomly
     def create_word_vector(self, word):
         """
@@ -106,7 +124,7 @@ class Word2Vec(object):
         nlp = spacy.load(self._lang)
 
         # Process text
-        doc = nlp(text)
+        doc = nlp(text.lower())
 
         # Resulting numpy array
         doc_array = np.array([])
@@ -135,7 +153,7 @@ class Word2Vec(object):
         :param dim: Vector dimension
         :return: A new dense vector
         """
-        return np.random.random(dim)
+        return np.random.random(dim) * 2.0 - 1.0
     # end _dense_mapper
 
     # Map word to a sparse vector

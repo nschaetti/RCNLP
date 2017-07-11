@@ -42,4 +42,14 @@ class WordPredictionDataset(object):
         return zip(self._X, self._Y)
     # end get_dataset
 
+    # Reset dataset
+    def reset(self):
+        """
+        Reset dataset
+        :return:
+        """
+        self._X = list()
+        self._Y = list()
+    # end reset
+
 # end WordPredictionDataset

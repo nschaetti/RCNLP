@@ -4,6 +4,7 @@ import numpy as np
 import spacy
 import Oger
 import mdp
+import spacy
 from .WordPredictionDataset import WordPredictionDataset
 
 ###########################################################
@@ -49,7 +50,7 @@ class EchoWordPrediction(object):
                                                         output_dim=word2vec.get_dimension(),
                                                         input_scaling=input_scaling,
                                                         leak_rate=leaky_rate, spectral_radius=spectral_radius,
-                                                        sparsity=input_sparsity, w_sparsity=w_sparsity, w=w)
+                                                        sparsity=input_sparsity, w_sparsity=w_sparsity)
 
         # Reset state at each call
         self._reservoir.reset_states = True
@@ -90,9 +91,52 @@ class EchoWordPrediction(object):
         :param text:
         :return:
         """
+        # Current word vector
+        current_vectors = self._word2vec(text)
+
         # Predict text
-        predicted_words = self._flow(self._word2vec(text))
-        return predicted_words
+        predicted_words = self._flow(current_vectors)
+
+        # Load language model
+        nlp = spacy.load(self._word2vec.get_lang())
+
+        # Process text
+        doc = nlp(text.lower())
+
+        # New word vectors
+        new_vectors = dict()
+
+        # For each word
+        for index, word in enumerate(doc):
+            # Add new vector
+            if index != 0:
+                if word.text not in new_vectors.keys():
+                    new_vectors[word.text] = predicted_words[index]
+                else:
+                    new_vectors[word.text] = np.vstack((new_vectors[word.text], predicted_words[index]))
+                # end if
+            # end if
+        # end for
+
+        return new_vectors
     # end predict
+
+    # Reset learning but keep reservoir
+    def reset(self):
+        """
+        Reset learning but keep reservoir
+        :return:
+        """
+        del self._readout, self._flow
+
+        # Reset dataset
+        self._dataset.reset()
+
+        # Ridge Regression
+        self._readout = Oger.nodes.RidgeRegressionNode()
+
+        # Flow
+        self._flow = mdp.Flow([self._reservoir, self._readout], verbose=0)
+    # end reset
 
 # end EchoWordPrediction
