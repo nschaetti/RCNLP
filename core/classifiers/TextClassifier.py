@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# File : core.classifiers.RCNLPTextClassifier.py
-# Description : Echo State Network for text classification.
+# File : core.classifiers.TextClassifier.py
+# Description : Text classifier abstract class.
 # Auteur : Nils Schaetti <nils.schaetti@unine.ch>
 # Date : 01.02.2017 17:59:05
 # Lieu : Nyon, Suisse
@@ -21,12 +21,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
-
-# Import packages
-import numpy as np
-import Oger
-import math
-import mdp
 
 
 # TextClassifier
