@@ -27,8 +27,8 @@ class WordPredictionDataset(object):
         Add an example
         :param text: The text example
         """
-        input_vectors = self._word2vec(text)
-        output_vectors = np.vstack((input_vectors[1:], np.zeros(self._word2vec.get_dimension())))
+        input_vectors = np.vstack((np.zeros(self._word2vec.get_dimension()), self._word2vec(text)))
+        output_vectors = np.vstack((self._word2vec(text), np.zeros(self._word2vec.get_dimension())))
         self._X.append(input_vectors)
         self._Y.append(output_vectors)
     # end add

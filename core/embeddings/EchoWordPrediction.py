@@ -59,7 +59,7 @@ class EchoWordPrediction(object):
         self._readout = Oger.nodes.RidgeRegressionNode()
 
         # Flow
-        self._flow = mdp.Flow([self._reservoir, self._readout], verbose=0)
+        self._flow = mdp.Flow([self._reservoir, self._readout], verbose=1)
     # end __init__
 
     # Add text example
@@ -109,12 +109,10 @@ class EchoWordPrediction(object):
         # For each word
         for index, word in enumerate(doc):
             # Add new vector
-            if index != 0:
-                if word.text not in new_vectors.keys():
-                    new_vectors[word.text] = predicted_words[index]
-                else:
-                    new_vectors[word.text] = np.vstack((new_vectors[word.text], predicted_words[index]))
-                # end if
+            if word.text not in new_vectors.keys():
+                new_vectors[word.text] = predicted_words[index]
+            else:
+                new_vectors[word.text] = np.vstack((new_vectors[word.text], predicted_words[index]))
             # end if
         # end for
 
@@ -136,7 +134,7 @@ class EchoWordPrediction(object):
         self._readout = Oger.nodes.RidgeRegressionNode()
 
         # Flow
-        self._flow = mdp.Flow([self._reservoir, self._readout], verbose=0)
+        self._flow = mdp.Flow([self._reservoir, self._readout], verbose=1)
     # end reset
 
 # end EchoWordPrediction

@@ -2,6 +2,7 @@
 #Imports
 import numpy as np
 import spacy
+from numpy import linalg as LA
 
 ###########################################################
 # Exceptions
@@ -88,6 +89,29 @@ class Word2Vec(object):
         # end if
     # end create_word_vector
 
+    # Normalize each vector
+    def normalize(self):
+        """
+        Normalize each vector
+        """
+        for word in self._voc.keys():
+            self._voc[word] /= LA.norm(self._voc[word])
+        # end for
+    # end normalize
+
+    # Get matrix
+    def get_matrix(self):
+        """
+        Get matrix
+        :return:
+        """
+        words_matrix = np.zeros((len(self._voc.keys()), self._dim))
+        for index, word in enumerate(self.words()):
+            words_matrix[index, :] = self._voc[word]
+        # end for
+        return words_matrix
+    # end get_matrix
+
     # Get a word vector
     def __getitem__(self, item):
         """
@@ -140,6 +164,45 @@ class Word2Vec(object):
 
         return doc_array
     # end __call__
+
+    # Left multiplication
+    def __mul__(self, other):
+        """
+        Left multiplication
+        :param other:
+        :return:
+        """
+        for word in self._voc.keys():
+            self._voc[word] *= other
+        # end for
+        return self
+    # end __mul__
+
+    # Right multiplication
+    def __rmul__(self, other):
+        """
+        Right multiplication
+        :param other:
+        :return:
+        """
+        for word in self._voc.keys():
+            self._voc[word] *= other
+        # end for
+        return self
+    # end __rmul__
+
+    # Augmented assignment (mult)
+    def __imul__(self, other):
+        """
+        Augmented assignment (mult)
+        :param other:
+        :return:
+        """
+        for word in self._voc.keys():
+            self._voc[word] *= other
+        # end for
+        return self
+    # end __imul__
 
     ###########################################
     # Private

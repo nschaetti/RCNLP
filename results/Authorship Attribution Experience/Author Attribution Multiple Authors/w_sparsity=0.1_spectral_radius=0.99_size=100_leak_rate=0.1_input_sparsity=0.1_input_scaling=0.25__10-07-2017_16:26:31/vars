@@ -1,0 +1,62 @@
+rc_w_sparsity : 0.1
+
+rc_spectral_radius : 0.99
+
+shuffle : <bound method Random.shuffle of <random.Random object at 0x1199530>>
+
+parser : ArgumentParser(prog='iqla_author_identification.py', usage=None, description='RCNLP - Authorship attribution witn ESN on the IQLA dataset', version=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+
+get_combinations : <function get_combinations at 0x7f742b95c5f0>
+
+rc_size : 100
+
+rc_leak_rate : 0.1
+
+log : <module 'logging' from '/usr/lib/python2.7/logging/__init__.pyc'>
+
+ex_name : Authorship Attribution Experience
+
+RCNLPEchoWordClassifier : <class 'core.classifiers.RCNLPEchoWordClassifier.RCNLPEchoWordClassifier'>
+
+__package__ : None
+
+__builtins__ : <module '__builtin__' (built-in)>
+
+json : <module 'json' from '/usr/lib/python2.7/json/__init__.pyc'>
+
+np : <module 'numpy' from '/usr/local/lib/python2.7/dist-packages/numpy/__init__.pyc'>
+
+RCNLPWordVectorConverter : <class 'core.converters.RCNLPWordVectorConverter.RCNLPWordVectorConverter'>
+
+__doc__ : None
+
+ex_instance : Author Attribution Multiple Authors
+
+__file__ : iqla_author_identification.py
+
+args : Namespace(author='Ferrante', converter='wv', dataset='/home/schaetti/Projets/TURING/Datasets/IQLA-GIAT/texts/', in_components=-1, k=10, lang='it', pca_model='')
+
+RCNLPTagConverter : <class 'core.converters.RCNLPTagConverter.RCNLPTagConverter'>
+
+rc_input_sparsity : 0.1
+
+RCNLPLogging : <class 'core.tools.RCNLPLogging.RCNLPLogging'>
+
+RCNLPPosConverter : <class 'core.converters.RCNLPPosConverter.RCNLPPosConverter'>
+
+__name__ : __main__
+
+RCNLPFuncWordConverter : <class 'core.converters.RCNLPFuncWordConverter.RCNLPFuncWordConverter'>
+
+argparse : <module 'argparse' from '/usr/lib/python2.7/argparse.pyc'>
+
+logging : <core.tools.RCNLPLogging.RCNLPLogging object at 0x7f742271c3d0>
+
+os : <module 'os' from '/usr/lib/python2.7/os.pyc'>
+
+itertools : <module 'itertools' (built-in)>
+
+rc_input_scaling : 0.25
+
+pickle : <module 'pickle' from '/usr/lib/python2.7/pickle.pyc'>
+
