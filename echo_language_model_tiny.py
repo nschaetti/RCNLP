@@ -78,7 +78,7 @@ if __name__ == "__main__":
     #np.set_printoptions(precision=3)
 
     # Word2Vec
-    word2vec = Word2Vec(dim=6, mapper='dense', sparsity=0.3)
+    word2vec = Word2Vec(dim=8, mapper='dense', sparsity=0.3)
 
     # ESN for word prediction
     esn_word_prediction = EchoWordPrediction(word2vec=word2vec, size=rc_size, leaky_rate=rc_leak_rate,
@@ -86,43 +86,99 @@ if __name__ == "__main__":
                                              input_sparsity=rc_input_sparsity, w_sparsity=rc_w_sparsity)
 
     # Init vectors
-    word2vec[u'she'] = np.array([1, 0, 0, 0, 0, 0])
-    word2vec[u'is'] = np.array([0, 1, 0, 0, 0, 0])
-    word2vec[u'smart'] = np.array([0, 0, 1, 0, 0, 0])
-    word2vec[u'beautiful'] = np.array([0, 0, 0, 1, 0, 0])
-    word2vec[u'.'] = np.array([0, 0, 0, 0, 1, 0])
-    word2vec[u'he'] = np.array([0, 0, 0, 0, 0, 1])
+    """word2vec[u'she']        = np.array([ 1, 0, 0, 0, 0, 0, 0, 0])
+    word2vec[u'is']         = np.array([ 0, 1, 0, 0, 0, 0, 0, 0])
+    word2vec[u'smart']      = np.array([ 0, 0, 1, 0, 0, 0, 0, 0])
+    word2vec[u'beautiful']  = np.array([ 0, 0, 0, 1, 0, 0, 0, 0])
+    word2vec[u'.']          = np.array([ 0, 0, 0, 0, 1, 0, 0, 0])
+    word2vec[u'he']         = np.array([ 0, 0, 0, 0, 0, 1, 0, 0])
+    word2vec[u'I']          = np.array([ 0, 0, 0, 0, 0, 0, 0, 1])
+    word2vec[u'think']      = np.array([-1, 0, 0, 0, 0, 0, 0, 0])
+    word2vec[u'will']       = np.array([ 0,-1, 0, 0, 0, 0, 0, 0])
+    word2vec[u'come']       = np.array([ 0, 0,-1, 0, 0, 0, 0, 0])
+    word2vec[u'and']        = np.array([ 0, 0, 0,-1, 0, 0, 0, 0])
+    word2vec[u'the']        = np.array([ 0, 0, 0, 0,-1, 0, 0, 0])
+    word2vec[u'cat']        = np.array([ 0, 0, 0, 0, 0,-1, 0, 0])
+    word2vec[u'dog']        = np.array([ 0, 0, 0, 0, 0, 0,-1, 0])
+    word2vec[u'tomorrow']   = np.array([ 0, 0, 0, 0, 0, 0, 0,-1])"""
 
     cont = True
     while cont:
         # Add text example
         esn_word_prediction.add(u"She is smart.")
         esn_word_prediction.add(u"He is beautiful.")
+        esn_word_prediction.add(u"I think he will come.")
+        esn_word_prediction.add(u"I think she will come.")
+        esn_word_prediction.add(u"I think she is smart and beautiful.")
+        esn_word_prediction.add(u"I think she is beautiful and smart.")
+        esn_word_prediction.add(u"I think he is smart and beautiful.")
+        esn_word_prediction.add(u"I think he is beautiful and smart.")
+        esn_word_prediction.add(u"He will come tomorrow.")
+        esn_word_prediction.add(u"She will come tomorrow.")
+        esn_word_prediction.add(u"The dog is smart.")
+        esn_word_prediction.add(u"The cat is beautiful.")
+        esn_word_prediction.add(u"The cat is smart.")
 
         # Print initial vectors
-        print(u"He")
+        """print(u"He")
         print(word2vec[u"he"])
         print(u"She")
         print(word2vec[u"She"])
         print(u"is")
         print(word2vec[u'is'])
+        print(u"was")
+        print(word2vec[u'was'])
         print(u"Smart")
         print(word2vec[u'smart'])
         print(u"Beautiful")
         print(word2vec[u'beautiful'])
         print(u".")
         print(word2vec[u'.'])
-        print(u"#######################################")
+        print(u"#######################################")"""
 
         # Train
         esn_word_prediction.train()
 
         # Predict
-        prediction1 = esn_word_prediction.predict(u"She is smart.")
-        prediction2 = esn_word_prediction.predict(u"He is beautiful.")
+        predictions = list()
+        predictions.append(esn_word_prediction.predict(u"She is smart."))
+        predictions.append(esn_word_prediction.predict(u"He is beautiful."))
+        predictions.append(esn_word_prediction.predict(u"I think he will come."))
+        predictions.append(esn_word_prediction.predict(u"I think she will come."))
+        predictions.append(esn_word_prediction.predict(u"I think she is smart and beautiful."))
+        predictions.append(esn_word_prediction.predict(u"I think she is beautiful and smart."))
+        predictions.append(esn_word_prediction.predict(u"I think he is smart and beautiful."))
+        predictions.append(esn_word_prediction.predict(u"I think he is beautiful and smart."))
+        predictions.append(esn_word_prediction.predict(u"He will come tomorrow."))
+        predictions.append(esn_word_prediction.predict(u"She will come tomorrow."))
+        predictions.append(esn_word_prediction.predict(u"The dog is smart."))
+        predictions.append(esn_word_prediction.predict(u"The cat is beautiful."))
+        predictions.append(esn_word_prediction.predict(u"The cat is smart."))
+
+        # Predicted vectors
+        pred_vectors = dict()
+        average_vectors = dict()
+
+        # For each prediction
+        for pred in predictions:
+            for word in pred.keys():
+                if word not in pred_vectors.keys():
+                    pred_vectors[word] = pred[word]
+                else:
+                    pred_vectors[word] = np.vstack((pred_vectors[word], pred[word]))
+                # end if
+            # end for
+        # end for
+
+        # Reduce
+        for word in pred_vectors.keys():
+            if pred_vectors[word].ndim > 1:
+                average_vectors[word] = np.average(pred_vectors[word], axis=0)
+            # end if
+        # end for
 
         # Print resulting
-        print(u"He")
+        """print(u"He")
         print(prediction2[u"he"])
         print(u"She")
         print(prediction1[u"she"])
@@ -130,6 +186,10 @@ if __name__ == "__main__":
         print(prediction1[u'is'])
         print(u"is")
         print(prediction2[u'is'])
+        print(u"was")
+        print(prediction3[u'was'])
+        print(u"was")
+        print(prediction4[u'was'])
         print(u"Smart")
         print(prediction1[u'smart'])
         print(u"Beautiful")
@@ -137,15 +197,36 @@ if __name__ == "__main__":
         print(u".")
         print(prediction1[u'.'])
         print(u".")
-        print(prediction2[u'.'])
+        print(prediction2[u'.'])"""
 
         # Update voc
-        word2vec[u"she"] = prediction1[u"she"]
-        word2vec[u"he"] = prediction2[u"he"]
-        word2vec[u"is"] = prediction1[u"is"]
-        word2vec[u"smart"] = prediction1[u"smart"]
-        word2vec[u"beautiful"] = prediction2[u"beautiful"]
-        word2vec[u"."] = prediction2[u"."]
+        word2vec[u"she"] = predictions[0][u"she"]
+        word2vec[u"he"] = predictions[1][u"he"]
+        word2vec[u"is"] = predictions[0][u"is"]
+        word2vec[u"smart"] = predictions[0][u"smart"]
+        word2vec[u"beautiful"] = predictions[1][u"beautiful"]
+        word2vec[u"."] = predictions[1][u"."]
+        word2vec[u"I"] = predictions[2][u"i"]
+        word2vec[u"think"] = predictions[3][u"think"]
+        word2vec[u"and"] = predictions[4][u"and"]
+        word2vec[u"will"] = predictions[8][u"will"]
+        word2vec[u"come"] = predictions[3][u"come"]
+        word2vec[u"the"] = predictions[10][u"the"]
+        word2vec[u"dog"] = predictions[10][u"dog"]
+        word2vec[u"cat"] = predictions[11][u"cat"]
+        word2vec[u"tomorrow"] = predictions[9][u"tomorrow"]
+
+        # Put all vectors in a matrix
+        vectors_matrix = np.array([])
+        for index, pred in enumerate(predictions):
+            for word in pred.keys():
+                if index == 0:
+                    vectors_matrix = pred[word]
+                else:
+                    vectors_matrix = np.vstack((vectors_matrix, pred[word]))
+                # end if
+            # end for
+        # end for
 
         # Print distance
         """distances = np.array([])
@@ -164,11 +245,11 @@ if __name__ == "__main__":
         print(u"Average distance : {}".format(np.average(distances)))"""
 
         # Print distances
-        for word1 in word2vec.words():
+        """for word1 in word2vec.words():
             for word2 in word2vec.words():
                 print_diff(word2vec, word1, word2)
             # end for
-        # end for
+        # end for"""
 
         # Length
         """lengths = np.array([])
@@ -181,38 +262,42 @@ if __name__ == "__main__":
         word2vec.normalize()
 
         # Print initial vectors
-        print(u"He")
+        """print(u"He")
         print(word2vec[u"he"])
         print(u"She")
         print(word2vec[u"She"])
         print(u"is")
         print(word2vec[u'is'])
+        print(u"was")
+        print(word2vec[u'was'])
         print(u"Smart")
         print(word2vec[u'smart'])
         print(u"Beautiful")
         print(word2vec[u'beautiful'])
         print(u".")
         print(word2vec[u'.'])
-        print(u"*************************************")
+        print(u"*************************************")"""
 
         answer = raw_input("Display? ").lower()
         if answer == "pca" or answer == "tsne":
             # TSNE
             if answer == "tsne":
                 model = TSNE(n_components=2, random_state=0)
-                np.set_printoptions(suppress=True)
-                reduced_matrix = model.fit_transform(word2vec.get_matrix())
-                print(reduced_matrix.shape)
-                print(reduced_matrix)
+                #np.set_printoptions(suppress=True)
+                #reduced_matrix = model.fit_transform(word2vec.get_matrix())
+                reduced_matrix = model.fit_transform(vectors_matrix)
+                """print(reduced_matrix.shape)
+                print(reduced_matrix)"""
             # end if
 
             # PCA
             if answer == "pca":
-                pca = PCA(n_components=2)
-                reduced_matrix = pca.fit_transform(word2vec.get_matrix())
-                print(pca.explained_variance_ratio_)
+                model = PCA(n_components=2)
+                #reduced_matrix = pca.fit_transform(word2vec.get_matrix())
+                reduced_matrix = model.fit_transform(vectors_matrix)
+                """print(model.explained_variance_ratio_)
                 print(reduced_matrix.shape)
-                print(reduced_matrix)
+                print(reduced_matrix)"""
             # end if
 
             # Show
@@ -223,13 +308,26 @@ if __name__ == "__main__":
             min_y = np.amin(reduced_matrix, axis=0)[1]
             plt.xlim((min_x * 1.2, max_x * 1.2))
             plt.ylim((min_y * 1.2, max_y * 1.2))
-            plt.scatter(reduced_matrix[:, 0], reduced_matrix[:, 1], 20)
-            for row_id in range(0, 6):
+            #plt.scatter(reduced_matrix[:, 0], reduced_matrix[:, 1], 10)
+            """for row_id in range(0, 15):
                 target_word = word2vec.words()[row_id]
                 x = reduced_matrix[row_id, 0]
                 y = reduced_matrix[row_id, 1]
                 print("{} = ({}, {})".format(target_word, x, y))
                 plt.annotate(target_word, (x, y))
+            # end for"""
+            """for index, pred in enumerate(predictions):
+                for word in pred.keys():
+                    reducted_vector = model.transform(pred[word])
+                    plt.scatter(reducted_vector[:, 0], reducted_vector[:, 1], 10)
+                    plt.annotate(word, (reducted_vector[0, 0], reducted_vector[0, 1]))
+                # end for
+            # end for"""
+            for word in average_vectors:
+                reducted_vector = model.transform(average_vectors[word])
+                plt.scatter(reducted_vector[0, 0], reducted_vector[0, 1], 10)
+                plt.annotate(word, (reducted_vector[0, 0], reducted_vector[0, 1]),
+                             arrowprops=dict(facecolor='red', shrink=0.025))
             # end for
             plt.show()
         # end if
