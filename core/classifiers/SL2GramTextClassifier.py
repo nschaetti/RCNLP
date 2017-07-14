@@ -75,4 +75,4 @@ class SL2GramTextClassifier(TextClassifier):
         pass
     # end _finalize_training
 
-# end TextClassifier
+# end SL2GramTextClassifier

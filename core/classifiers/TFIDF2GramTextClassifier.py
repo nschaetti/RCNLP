@@ -75,4 +75,4 @@ class TFIDF2GramTextClassifier(TextClassifier):
         pass
     # end _finalize_training
 
-# end TextClassifier
+# end TFIDF2GramTextClassifier
