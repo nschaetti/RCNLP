@@ -30,6 +30,7 @@ from core.embeddings.WordPredictionDataset import WordPredictionDataset
 from numpy import linalg as LA
 from sklearn.manifold import TSNE
 import pylab as plt
+from sklearn.decomposition import PCA
 
 #########################################################################
 # Experience settings
@@ -195,13 +196,24 @@ if __name__ == "__main__":
         print(u"*************************************")
 
         answer = raw_input("Display? ").lower()
-        if answer == "y":
+        if answer == "pca" or answer == "tsne":
             # TSNE
-            model = TSNE(n_components=2, random_state=0)
-            np.set_printoptions(suppress=True)
-            reduced_matrix = model.fit_transform(word2vec.get_matrix())
-            print(reduced_matrix.shape)
-            print(reduced_matrix)
+            if answer == "tsne":
+                model = TSNE(n_components=2, random_state=0)
+                np.set_printoptions(suppress=True)
+                reduced_matrix = model.fit_transform(word2vec.get_matrix())
+                print(reduced_matrix.shape)
+                print(reduced_matrix)
+            # end if
+
+            # PCA
+            if answer == "pca":
+                pca = PCA(n_components=2)
+                reduced_matrix = pca.fit_transform(word2vec.get_matrix())
+                print(pca.explained_variance_ratio_)
+                print(reduced_matrix.shape)
+                print(reduced_matrix)
+            # end if
 
             # Show
             plt.figure(figsize=(200, 200), dpi=100)
@@ -216,6 +228,7 @@ if __name__ == "__main__":
                 target_word = word2vec.words()[row_id]
                 x = reduced_matrix[row_id, 0]
                 y = reduced_matrix[row_id, 1]
+                print("{} = ({}, {})".format(target_word, x, y))
                 plt.annotate(target_word, (x, y))
             # end for
             plt.show()

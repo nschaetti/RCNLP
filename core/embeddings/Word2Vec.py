@@ -107,7 +107,7 @@ class Word2Vec(object):
         """
         words_matrix = np.zeros((len(self._voc.keys()), self._dim))
         for index, word in enumerate(self.words()):
-            words_matrix[index, :] = self._voc[word]
+            words_matrix[:, index] = self._voc[word]
         # end for
         return words_matrix
     # end get_matrix
