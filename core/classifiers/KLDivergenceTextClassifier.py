@@ -26,7 +26,7 @@
 from .TextClassifier import TextClassifier
 
 
-# Statistical language text classifier
+# KL divergence text classifier
 class KLDivergenceTextClassifier(TextClassifier):
 
     # Constructor
