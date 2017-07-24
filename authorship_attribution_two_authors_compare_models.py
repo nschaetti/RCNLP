@@ -52,7 +52,7 @@ ex_instance = "Two Authors compare models"
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
 rc_input_scaling = 0.25  # Input scaling
-rc_size = 100  # Reservoir size
+rc_size = 500  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.1
@@ -150,90 +150,92 @@ if __name__ == "__main__":
 
     # Models
     models = list()
-    models.append(('SLTextClassifier-DP', 1, np.zeros(args.k)))
-    models.append(('SLTextClassifier-JM', 1, np.zeros(args.k)))
-    models.append(('TFIDFTextClassifier', 1, np.zeros(args.k)))
-    models.append(('EchoWordClassifier', 40, np.zeros(args.k)))
-    models.append(('SL2GramTextClassifier-DP', 1, np.zeros(args.k)))
-    models.append(('SL2GramTextClassifier-JM', 1, np.zeros(args.k)))
-    models.append(('TFIDF2GramTextClassifier', 1, np.zeros(args.k)))
+    models.append({'name': "SLTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': True})
+    models.append({'name': "SLTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': True})
+    models.append({'name': "TFIDFTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': False})
+    models.append({'name': "EchoWordClassifier", "samples": 40, "results": np.zeros(args.k), 'skip': False})
+    models.append({'name': "SL2GramTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': False})
+    models.append({'name': "SL2GramTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': False})
+    models.append({'name': "TFIDF2GramTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': False})
 
     # For each model
     for model in models:
-        # Log
-        print(u"For model {}".format(model[0]))
-
-        # Array for results
-        success_rates = np.zeros((args.k, model[1]))
-
-        # For each sample
-        for s in range(0, model[1]):
-            # Get model
-            classifier = create_model(model[0])
-
+        if not model['skip']:
             # Log
-            print(u"\tFor sample {}/{}".format(s+1, model[1]))
+            print(u"For model {}".format(model['name']))
 
-            # k-Fold cross validation
-            for k in range(0, args.k):
-                # Prepare training and test set.
-                test_set_indexes = indexes[k]
-                training_set_indexes = indexes
-                training_set_indexes = np.delete(training_set_indexes, k, axis=0)
-                training_set_indexes.shape = (100 - n_fold_samples)
+            # Array for results
+            success_rates = np.zeros((args.k, model['samples']))
 
-                # Add examples
-                for author_index, author_id in enumerate((args.author1, args.author2)):
-                    author_path = os.path.join(args.dataset, "total", author_id)
-                    for file_index in training_set_indexes:
-                        file_path = os.path.join(author_path, str(file_index) + ".txt")
-                        classifier.train(io.open(file_path, 'r').read(), author_index)
+            # For each sample
+            for s in range(0, model['samples']):
+                # Get model
+                classifier = create_model(model['name'])
+
+                # Log
+                print(u"\tFor sample {}/{}".format(s+1, model['samples']))
+
+                # k-Fold cross validation
+                for k in range(0, args.k):
+                    # Prepare training and test set.
+                    test_set_indexes = indexes[k]
+                    training_set_indexes = indexes
+                    training_set_indexes = np.delete(training_set_indexes, k, axis=0)
+                    training_set_indexes.shape = (100 - n_fold_samples)
+
+                    # Add examples
+                    for author_index, author_id in enumerate((args.author1, args.author2)):
+                        author_path = os.path.join(args.dataset, "total", author_id)
+                        for file_index in training_set_indexes:
+                            file_path = os.path.join(author_path, str(file_index) + ".txt")
+                            classifier.train(io.open(file_path, 'r').read(), author_index)
+                        # end for
                     # end for
-                # end for
 
-                # Finalize model training
-                classifier.finalize(verbose=False)
+                    # Finalize model training
+                    classifier.finalize(verbose=False)
 
-                # Init test epoch
-                test_set = list()
+                    # Init test epoch
+                    test_set = list()
 
-                # Get text
-                for author_index, author_id in enumerate((args.author1, args.author2)):
-                    author_path = os.path.join(args.dataset, "total", str(author_id))
-                    for file_index in test_set_indexes:
-                        file_path = os.path.join(author_path, str(file_index) + ".txt")
-                        # Document success rate
-                        if not args.sentence:
-                            test_set.append((io.open(file_path, 'r').read(), author_index))
-                        else:
-                            # Sentence success rate
-                            nlp = spacy.load(args.lang)
-                            doc = nlp(io.open(file_path, 'r').read())
-                            for sentence in doc.sents:
-                                test_set.append((sentence, author_index))
-                            # end for
-                        # end if
+                    # Get text
+                    for author_index, author_id in enumerate((args.author1, args.author2)):
+                        author_path = os.path.join(args.dataset, "total", str(author_id))
+                        for file_index in test_set_indexes:
+                            file_path = os.path.join(author_path, str(file_index) + ".txt")
+                            # Document success rate
+                            if not args.sentence:
+                                test_set.append((io.open(file_path, 'r').read(), author_index))
+                            else:
+                                # Sentence success rate
+                                nlp = spacy.load(args.lang)
+                                doc = nlp(io.open(file_path, 'r').read())
+                                for sentence in doc.sents:
+                                    test_set.append((sentence, author_index))
+                                # end for
+                            # end if
+                        # end for
                     # end for
+
+                    # Success rate
+                    success_rate = Metrics.success_rate(classifier, test_set, verbose=True)
+                    print(u"\t\t{} - Success rate : {}".format(k, success_rate))
+
+                    # Save result
+                    success_rates[k, s] = success_rate
+
+                    # Reset classifier
+                    classifier.reset()
                 # end for
-
-                # Success rate
-                success_rate = Metrics.success_rate(classifier, test_set, verbose=False)
-                print(u"\t\t{} - Success rate : {}".format(k, success_rate))
-
-                # Save result
-                success_rates[k, s] = success_rate
-
-                # Reset classifier
-                classifier.reset()
             # end for
-        # end for
 
-        # Average results
-        model[2] = np.average(success_rates, axis=1)
+            # Average results
+            model['results'] = np.average(success_rates, axis=1)
 
-        # Log success
-        logging.save_results(u"\tSuccess rate ", np.average(model[2]), display=True)
-        logging.save_results(u"\tSuccess rate std ", np.std(model[2]), display=True)
+            # Log success
+            logging.save_results(u"\tSuccess rate ", np.average(model['results']), display=True)
+            logging.save_results(u"\tSuccess rate std ", np.std(model['results']), display=True)
+        # end if
     # end for
 
     # Compare results
