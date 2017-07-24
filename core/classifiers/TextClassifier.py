@@ -23,8 +23,14 @@
 #
 
 
-# TextClassifier
+# Text classifier
 class TextClassifier(object):
+    """
+    Text classifier
+    """
+
+    # Text classifier
+    _training_finalized = False
 
     # Constructor
     def __init__(self, classes):
@@ -34,6 +40,7 @@ class TextClassifier(object):
         """
         # Properties
         self._classes = classes
+        self._n_classes = len(classes)
     # end __init__
 
     ##############################################
@@ -43,7 +50,7 @@ class TextClassifier(object):
     # Train the model
     def train(self, x, y):
         """
-        Train
+        Train the model
         :param x: Example's inputs.
         :param y: Example's outputs.
         """
@@ -62,7 +69,10 @@ class TextClassifier(object):
         :return: A tuple with found class and values per classes.
         """
         # Finalize training
-        self._finalize_training()
+        if not self._training_finalized:
+            self._finalize_training()
+            self._training_finalized = True
+        # end if
 
         # Classify the document
         return self._classify(x)

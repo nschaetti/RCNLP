@@ -27,21 +27,23 @@ import numpy as np
 import Oger
 import math
 import mdp
+from .TextClassifier import TextClassifier
 
 
-class RCNLPCharacterStreamClassifier(object):
+class EchoLetterClassifier(TextClassifier):
 
     # Constructor
-    def __init__(self, classes, size, input_scaling=-1, leak_rate = 0.95, input_sparsity=0.1, w_sparsity=0.1,
+    def __init__(self, classes, size, input_scaling=-1, leak_rate=0.95, input_sparsity=0.1, w_sparsity=0.1,
                  alphabet="abcdefghijklmnopqrstuvwxyz,.;:?!' ", use_uppercase=False, verbose=False):
         """
         Constructor.
         :param alphabet:
         :param use_uppercase:
         """
+        # Super
+        super(EchoLetterClassifier, self).__init__(classes)
+
         # Properties
-        self._classes = classes
-        self._n_classes = len(classes)
         self._size = size
         self._leak_rate = leak_rate
         self._input_sparsity = input_sparsity
