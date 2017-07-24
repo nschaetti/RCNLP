@@ -67,6 +67,16 @@ class TextClassifier(object):
         self._training_finalized = True
     # end finalize
 
+    # Predict the class
+    def predict(self, x):
+        """
+        Predict class of a text file
+        :param x: Sample
+        :return: Predicted class and classes probabilities
+        """
+        return self._classify(x)
+    # end predict
+
     ##############################################
     # Override
     ##############################################

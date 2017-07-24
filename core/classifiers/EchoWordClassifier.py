@@ -28,7 +28,7 @@ import numpy as np
 import Oger
 import mdp
 from datetime import datetime
-import matplotlib.pyplot as plt
+from sys import getsizeof
 from core.converters.RCNLPConverter import RCNLPConverter
 from .TextClassifier import TextClassifier
 
@@ -117,19 +117,19 @@ class EchoWordClassifier(TextClassifier):
         self._verbose = verbose
     # end train
 
-    # Predict the class of a text
-    def predict(self, text):
-        """
-        Predict class of a text file
-        :param text: The text
-        :return: Predicted class and classes probabilities
-        """
-        return self._classify(text)
-    # end predict
-
     ##############################################
     # Override
     ##############################################
+
+    # To String
+    def __str__(self):
+        """
+        To string
+        :return:
+        """
+        return "EchoWordClassifier(n_classes={}, size={}, spectral_radius={}, leaky_rate={}, mem_size={}o)".format(
+            self._n_classes, self._output_dim, self._spectral_radius, self._leak_rate, getsizeof(self))
+    # end __str__
 
     ##############################################
     # Private
