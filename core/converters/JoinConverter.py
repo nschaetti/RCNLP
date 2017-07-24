@@ -26,6 +26,7 @@ import numpy as np
 from Converter import Converter
 
 
+# Join two converters
 class JoinConverter(Converter):
     """
     Join two converters
@@ -48,14 +49,13 @@ class JoinConverter(Converter):
         self._conv2 = conv2
     # end __init__
 
-    # Get the number of inputs
-    def _get_inputs_size(self):
-        """
-        Get the input size.
-        :return: The input size.
-        """
-        return self._conv1.get_n_inputs() + self._conv2.get_n_inputs()
-    # end get_n_inputs
+    ##############################################
+    # Public
+    ##############################################
+
+    ##############################################
+    # Override
+    ##############################################
 
     # Convert a string to a ESN input
     def __call__(self, text, exclude=list(), word_exclude=list()):
@@ -73,5 +73,18 @@ class JoinConverter(Converter):
 
         return np.hstack((conv1_text, conv2_text))
     # end convert
+
+    ##############################################
+    # Private
+    ##############################################
+
+    # Get the number of inputs
+    def _get_inputs_size(self):
+        """
+        Get the input size.
+        :return: The input size.
+        """
+        return self._conv1.get_n_inputs() + self._conv2.get_n_inputs()
+    # end get_n_inputs
 
 # end RCNLPConverter

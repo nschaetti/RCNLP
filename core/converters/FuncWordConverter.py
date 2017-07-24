@@ -27,9 +27,10 @@ import spacy
 from Converter import Converter
 
 
+# Convert text to function word symbols
 class FuncWordConverter(Converter):
     """
-    Convert text to function word symbols.
+    Convert text to function word symbols
     """
 
     # Constructor
@@ -43,6 +44,10 @@ class FuncWordConverter(Converter):
         super(FuncWordConverter, self).__init__(lang, tag_to_symbol, resize, pca_model)
         self._fill_in = fill_in
     # end __init__
+
+    ##############################################
+    # Public
+    ##############################################
 
     # Get tags
     def get_tags(self):
@@ -83,14 +88,9 @@ class FuncWordConverter(Converter):
                 u"would", u"wouldn't", u"yet", u"you", u"your", u"yours", u"yourself", u"yourselves"]
     # end get_tags
 
-    # Get inputs size
-    def _get_inputs_size(self):
-        """
-        Get inputs size.
-        :return: The input size.
-        """
-        return len(self.get_tags())
-    # end if
+    ##############################################
+    # Override
+    ##############################################
 
     # Convert a string to a ESN input
     def __call__(self, text, exclude=list(), word_exclude=list()):
@@ -133,5 +133,18 @@ class FuncWordConverter(Converter):
 
         return self.reduce(doc_array)
     # end convert
+
+    ##############################################
+    # Private
+    ##############################################
+
+    # Get inputs size
+    def _get_inputs_size(self):
+        """
+        Get inputs size.
+        :return: The input size.
+        """
+        return len(self.get_tags())
+    # end if
 
 # end RCNLPConverter

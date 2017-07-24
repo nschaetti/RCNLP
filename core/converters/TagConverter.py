@@ -27,6 +27,7 @@ import spacy
 from Converter import Converter
 
 
+# Convert text to PoS tags symbols
 class TagConverter(Converter):
     """
     Convert text to Part-Of-Speech Tags symbols.
@@ -44,6 +45,10 @@ class TagConverter(Converter):
         self._fill_in = fill_in
     # end __init__
 
+    ##############################################
+    # Public
+    ##############################################
+
     # Get tags
     def get_tags(self):
         """
@@ -56,14 +61,9 @@ class TagConverter(Converter):
                u"VBG", u"WDT", u"WP", u"WP$", u"WRB"]
     # end get_tags
 
-    # Get the number of inputs
-    def _get_inputs_size(self):
-        """
-        Get the input size.
-        :return: The input size.
-        """
-        return len(self.get_tags())
-    # end get_n_inputs
+    ##############################################
+    # Override
+    ##############################################
 
     # Convert a string to a ESN input
     def __call__(self, text, exclude=list(), word_exclude=list()):
@@ -103,5 +103,18 @@ class TagConverter(Converter):
 
         return self.reduce(doc_array)
     # end convert
+
+    ##############################################
+    # Private
+    ##############################################
+
+    # Get the number of inputs
+    def _get_inputs_size(self):
+        """
+        Get the input size.
+        :return: The input size.
+        """
+        return len(self.get_tags())
+    # end get_n_inputs
 
 # end RCNLPConverter

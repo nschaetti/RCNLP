@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
 
+# Base class for converters
 class Converter(object):
     """
     Base class for converters.
@@ -54,17 +55,9 @@ class Converter(object):
             # end if
     # end __init__
 
-    # Convert a string to a ESN input
-    def __call__(self, text, exclude=list(), word_exclude=list()):
-        """
-        Convert a string to a ESN input
-        :param text: Text to convert.
-        :param exclude: List of tags to exclude.
-        :param word_exclude: List of words to exclude.
-        :return: A list of symbols.
-        """
-        pass
-    # end convert
+    ##############################################
+    # Public
+    ##############################################
 
     # Generate symbols
     def generate_symbols(self):
@@ -93,30 +86,6 @@ class Converter(object):
         return None
     # end word_to_symbol
 
-    # Get inputs size
-    def _get_inputs_size(self):
-        """
-        Get inputs size.
-        :return:
-        """
-        return 0
-    # end if
-
-    # Get the number of inputs
-    def get_n_inputs(self):
-        """
-        Get the number of inputs.
-        :return: The input size.
-        """
-        if self._pca_model is not None:
-            return self._pca_model.n_components_
-        elif self._resize != -1:
-            return self._resize
-        else:
-            return self._get_inputs_size()
-        # end if
-    # end get_n_inputs
-
     # Get tags
     def get_tags(self):
         """
@@ -124,6 +93,7 @@ class Converter(object):
         :return:
         """
         return []
+
     # end get_tags
 
     # Reduce the inputs
@@ -143,6 +113,54 @@ class Converter(object):
         # end if
         return x
     # end reduce
+
+    # Get the number of inputs
+    def get_n_inputs(self):
+        """
+        Get the number of inputs.
+        :return: The input size.
+        """
+        if self._pca_model is not None:
+            return self._pca_model.n_components_
+        elif self._resize != -1:
+            return self._resize
+        else:
+            return self._get_inputs_size()
+        # end if
+    # end get_n_inputs
+
+    ##############################################
+    # Override
+    ##############################################
+
+    # Convert a string to a ESN input
+    def __call__(self, text, exclude=list(), word_exclude=list()):
+        """
+        Convert a string to a ESN input
+        :param text: Text to convert.
+        :param exclude: List of tags to exclude.
+        :param word_exclude: List of words to exclude.
+        :return: A list of symbols.
+        """
+        pass
+    # end convert
+
+    ##############################################
+    # Private
+    ##############################################
+
+    # Get inputs size
+    def _get_inputs_size(self):
+        """
+        Get inputs size.
+        :return:
+        """
+        return 0
+    # end if
+
+    ##############################################
+    # Static
+    ##############################################
 
     # Display representations
     @staticmethod

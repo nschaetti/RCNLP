@@ -24,23 +24,22 @@
 
 import numpy as np
 import spacy
-import scipy.signal as sig
 from Converter import Converter
 
 
+# Convert text to word vectors
 class WVConverter(Converter):
     """
-    Convert text to word vectors.
+    Convert text to word vectors
     """
 
-    # Get the number of inputs
-    def _get_inputs_size(self):
-        """
-        Get the input size.
-        :return: The input size.
-        """
-        return 300
-    # end get_n_inputs
+    ##############################################
+    # Public
+    ##############################################
+
+    ##############################################
+    # Override
+    ##############################################
 
     # Convert a string to a ESN input
     def __call__(self, text, exclude=list(), word_exclude=list()):
@@ -76,5 +75,18 @@ class WVConverter(Converter):
 
         return self.reduce(doc_array)
     # end convert
+
+    ##############################################
+    # Private
+    ##############################################
+
+    # Get the number of inputs
+    def _get_inputs_size(self):
+        """
+        Get the input size.
+        :return: The input size.
+        """
+        return 300
+    # end get_n_inputs
 
 # end RCNLPConverter

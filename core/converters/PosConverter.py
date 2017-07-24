@@ -44,6 +44,10 @@ class RCNLPPosConverter(Converter):
         self._fill_in = fill_in
     # end __init__
 
+    ##############################################
+    # Public
+    ##############################################
+
     # Get tags
     def get_tags(self):
         """
@@ -54,14 +58,9 @@ class RCNLPPosConverter(Converter):
                u"SYM", u"VERB", u"X"]
     # end get_tags
 
-    # Get the number of inputs
-    def _get_inputs_size(self):
-        """
-        Get the number of inputs.
-        :return: The number of inputs.
-        """
-        return len(self.get_tags())
-    # end get_n_inputs
+    ##############################################
+    # Override
+    ##############################################
 
     # Convert a string to a ESN input
     def __call__(self, text, exclude=list(), word_exclude=list()):
@@ -95,12 +94,25 @@ class RCNLPPosConverter(Converter):
                         doc_array = sym
                     else:
                         doc_array = np.vstack((doc_array, sym))
-                    # end if
-                # end if
-            # end if
+                        # end if
+                        # end if
+                        # end if
         # end for
 
         return self.reduce(doc_array)
     # end convert
+
+    ##############################################
+    # Private
+    ##############################################
+
+    # Get the number of inputs
+    def _get_inputs_size(self):
+        """
+        Get the number of inputs.
+        :return: The number of inputs.
+        """
+        return len(self.get_tags())
+    # end get_n_inputs
 
 # end RCNLPConverter

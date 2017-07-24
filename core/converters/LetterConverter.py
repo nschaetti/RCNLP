@@ -45,6 +45,10 @@ class LetterConverter(Converter):
         self._fill_in = fill_in
     # end __init__
 
+    ##############################################
+    # Public
+    ##############################################
+
     # Get tags
     def get_tags(self):
         """
@@ -55,14 +59,9 @@ class LetterConverter(Converter):
                 u'q', u'r', u's', u't', u'u', u'v', u'w', u'x', u'y', u'z', u'.', u',', u';', u'-', u'!', u'?']
     # end get_tags
 
-    # Get inputs size
-    def _get_inputs_size(self):
-        """
-        Get inputs size.
-        :return: The input size.
-        """
-        return len(self.get_tags())
-    # end if
+    ##############################################
+    # Override
+    ##############################################
 
     # Convert a string to a ESN input
     def __call__(self, text, exclude=list(), word_exclude=list()):
@@ -80,21 +79,34 @@ class LetterConverter(Converter):
         # For each letter
         init = False
         for index, letter in enumerate(text):
-                sym = self.tag_to_symbol(letter)
-                if sym is None and self._fill_in:
-                    sym = null_symbol
-                # end if
-                if sym is not None:
-                    if not init:
-                        doc_array = sym
-                        init = True
-                    else:
-                        doc_array = np.vstack((doc_array, sym))
+            sym = self.tag_to_symbol(letter)
+            if sym is None and self._fill_in:
+                sym = null_symbol
+            # end if
+            if sym is not None:
+                if not init:
+                    doc_array = sym
+                    init = True
+                else:
+                    doc_array = np.vstack((doc_array, sym))
                     # end if
-                # end if
+                    # end if
         # end for
 
         return self.reduce(doc_array)
     # end convert
+
+    ##############################################
+    # Private
+    ##############################################
+
+    # Get inputs size
+    def _get_inputs_size(self):
+        """
+        Get inputs size.
+        :return: The input size.
+        """
+        return len(self.get_tags())
+    # end if
 
 # end LetterConverter
