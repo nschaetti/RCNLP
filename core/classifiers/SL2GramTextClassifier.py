@@ -80,33 +80,39 @@ class SL2GramTextClassifier(TextClassifier):
         # Tokens
         tokens = spacy.load('en')(x)
 
+        # Preceding token
+        preceding_token = None
+
         # For each token
         for token in tokens:
-            token_text = token.text.lower()
-            # Token counters
-            try:
-                self._token_counters[token_text] += 1.0
-            except KeyError:
-                self._token_counters[token_text] = 1.0
-                self._n_token += 1.0
-            # end try
+            if preceding_token is not None:
+                token_text = preceding_token.text.lower() + u" " + token.text.lower()
+                # Token counters
+                try:
+                    self._token_counters[token_text] += 1.0
+                except KeyError:
+                    self._token_counters[token_text] = 1.0
+                    self._n_token += 1.0
+                # end try
 
-            # Create entry in class counter
-            try:
-                probs = self._class_counters[token_text]
-            except KeyError:
-                self._class_counters[token_text] = dict()
-            # end try
+                # Create entry in class counter
+                try:
+                    probs = self._class_counters[token_text]
+                except KeyError:
+                    self._class_counters[token_text] = dict()
+                # end try
 
-            # Class counters
-            if y in self._class_counters[token_text].keys():
-                self._class_counters[token_text][y] += 1.0
-            else:
-                self._class_counters[token_text][y] = 1.0
+                # Class counters
+                if y in self._class_counters[token_text].keys():
+                    self._class_counters[token_text][y] += 1.0
+                else:
+                    self._class_counters[token_text][y] = 1.0
+                # end if
+
+                # One more token
+                self._n_total_token += 1.0
             # end if
-
-            # One more token
-            self._n_total_token += 1.0
+            preceding_token = token
         # end token
     # end train
 
@@ -172,14 +178,17 @@ class SL2GramTextClassifier(TextClassifier):
 
         # Get all tokens
         tokens = list()
+        preceding_token = None
         for token in text_tokens:
-            tokens.append(token)
+            if preceding_token is not None:
+                tokens.append(preceding_token.text.lower() + u" " + token.text.lower())
+            # end if
+            preceding_token = token
         # end for
 
         # For each token
         for token in tokens:
-            token_text = token.text.lower()
-
+            token_text = token
             # Get token probs for each class
             try:
                 token_probs = self[token_text]
