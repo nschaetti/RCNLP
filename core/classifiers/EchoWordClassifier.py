@@ -27,6 +27,7 @@ import io
 import numpy as np
 import Oger
 import mdp
+from datetime import datetime
 import matplotlib.pyplot as plt
 from core.converters.RCNLPConverter import RCNLPConverter
 from .TextClassifier import TextClassifier
@@ -38,9 +39,24 @@ class EchoWordClassifier(TextClassifier):
     Echo Word classifier model
     """
 
+    # Variables
+    _verbose = False
+
     # Constructor
     def __init__(self, classes, size, leak_rate, input_scaling, w_sparsity, input_sparsity, spectral_radius, converter,
                  w=None):
+        """
+        Constructor
+        :param classes: Set of possible classes
+        :param size: Reservoir's size
+        :param leak_rate: Reservoir's leaky rate
+        :param input_scaling: Input scaling
+        :param w_sparsity: Hidden layer sparsity
+        :param input_sparsity: Input layer sparsity
+        :param spectral_radius: Hidden layer matrix's spectral radius
+        :param converter: Word to input converter
+        :param w: Hidden layer matrix
+        """
         # Super
         super(EchoWordClassifier, self).__init__(classes=classes)
 
@@ -71,8 +87,15 @@ class EchoWordClassifier(TextClassifier):
         self._flow = mdp.Flow([self._reservoir, self._readout], verbose=0)
     # end __init__
 
+    ##############################################
+    # Public
+    ##############################################
+
     # Reset learning but keep reservoir
     def reset(self):
+        """
+        Reset model learned parameters
+        """
         del self._readout, self._flow
 
         # Ridge Regression
@@ -82,35 +105,48 @@ class EchoWordClassifier(TextClassifier):
         self._flow = mdp.Flow([self._reservoir, self._readout], verbose=0)
     # end reset
 
-    # Generate training data from text file
-    def generate_training_data_from_text(self, text_file, author):
-        # Get Temporal Representations
-        reps = self._converter(io.open(text_file).read())
+    # Train
+    def train(self, x, y, verbose=False):
+        """
+        Add a training example
+        :param x: Text file example
+        :param y: Corresponding author
+        :param verbose: Verbosity
+        """
+        self._examples[x] = y
+        self._verbose = verbose
+    # end train
 
-        # Generate x and y
-        return RCNLPConverter.generate_data_set_inputs(reps, self._n_classes, author)
-    # end generate_training_data_from_text
+    # Predict the class of a text
+    def predict(self, text):
+        """
+        Predict class of a text file
+        :param text: The text
+        :return: Predicted class and classes probabilities
+        """
+        return self._classify(text)
+    # end predict
 
-    # Generate text data from text file
-    def generate_test_data_from_text(self, text_file):
-        return self._converter(io.open(text_file).read())
-    # end generate_text_data_from_text
+    ##############################################
+    # Override
+    ##############################################
 
-    # Add example
-    def add_example(self, text_file, class_id):
-        self._examples[text_file] = class_id
-    # end add_example
+    ##############################################
+    # Private
+    ##############################################
 
-    # Train the model
-    def train(self):
+    # Finalize the training phase
+    def _finalize_training(self):
+        """
+        Finalize the training phase
+        """
         # Inputs outputs
         X = list()
         Y = list()
 
         # For each training text file
-        #print("Generating data set...")
-        for text_file in self._examples.keys():
-            x, y = self.generate_training_data_from_text(text_file, self._examples[text_file])
+        for text in self._examples.keys():
+            x, y = self._generate_training_data(text, self._examples[text])
             X.append(x)
             Y.append(y)
         # end for
@@ -118,100 +154,67 @@ class EchoWordClassifier(TextClassifier):
         # Create data
         data = [None, zip(X, Y)]
 
+        # Pre-log
+        if self._verbose:
+            print("Training model...")
+            print(datetime.now().strftime("%H:%M:%S"))
+        # end if
+
         # Train the model
-        #print("Training model...")
-        #print(datetime.now().strftime("%H:%M:%S"))
         self._flow.train(data)
-        #print(datetime.now().strftime("%H:%M:%S"))
-    # end train
 
-    # Predict the class of a text
-    def pred(self, text_file, show_graph=False, print_outputs=False):
+        # Post-log
+        if self._verbose:
+            print(datetime.now().strftime("%H:%M:%S"))
+        # end if
+    # end _finalize_training
+
+    # Classify a text file
+    def _classify(self, text):
+        """
+        Classify text
+        :param text: Text to classify
+        :return: Predicted class and class probabilities
+        """
         # Get reservoir inputs
-        x = self.generate_test_data_from_text(text_file)
+        x = self._generate_test_data(text)
 
         # Get reservoir response
         y = self._flow(x)
         y -= np.min(y)
         y /= np.max(y)
 
-        if print_outputs:
-            for index, y_ in enumerate(y):
-                print("(%d, %f)" % (index, y_[0]))
-            # end for
-            print(np.average(y[:, 0]))
-            print("")
-            for index, y_ in enumerate(y):
-                print("(%d, %f)" % (index, y_[1]))
-            # end for
-            print(np.average(y[:, 1]))
-            return
-        # end if
+        # Get maximum probability class
+        return np.argmax(np.average(y, 0)), np.average(y, 0)
+    # end _classify
 
-        # Plot results
-        if show_graph:
-            """y -= np.min(y)
-            y /= np.max(y)"""
-            plt.xlim([0, len(y[:, 0])])
-            plt.ylim([0.0, 1.0])
-            plt.plot(y[:, 0], color='r', label='Author 1')
-            plt.plot(np.repeat(np.average(y[:, 0]), len(y[:, 0])), color='r', label='Author 1 average', linestyle='dashed')
-            plt.plot(y[:, 1], color='b', label='Author 2')
-            plt.plot(np.repeat(np.average(y[:, 1]), len(y[:, 1])), color='b', label='Author 2 average', linestyle='dashed')
-            plt.plot(np.repeat(np.average(y), len(y[:, 1])), color='k', label='Average', linestyle='dashed')
-            plt.show()
-        # end if
+    # Generate training data from text
+    def _generate_training_data(self, text, author):
+        """
+        Generate training data from text file.
+        :param text: Text
+        :param author: Corresponding author.
+        :return: Data set inputs
+        """
+        # Get Temporal Representations
+        reps = self._converter(text)
 
-        # Classify
-        if np.average(y[:, 0]) > np.average(y[:, 1]):
-            return 0, np.average(y[:, 0]), np.average(y[:, 1])
-        else:
-            return 1, np.average(y[:, 0]), np.average(y[:, 1])
-        # end if
+        # Generate x and y
+        return RCNLPConverter.generate_data_set_inputs(reps, self._n_classes, author)
+    # end generate_training_data
 
-        #return np.argmax(np.average(y, 0)), np.average(y, 0)
-    # end pred
+    # Generate text data from text file
+    def _generate_test_data(self, text):
+        """
+        Generate text data from text file
+        :param text: Text
+        :return: Test data set inputs
+        """
+        return self._converter(text)
+    # end generate_text_data
 
-    # Predict the class of a string
-    def pred_text(self, text):
-        # Get reservoir inputs
-        x = self._converter(text)
-
-        # Get reservoir response
-        y = self._flow(x)
-        y -= np.min(y)
-        y /= np.max(y)
-
-        # Classify
-        if np.average(y[:, 0]) > np.average(y[:, 1]):
-            return 0, np.average(y[:, 0]), np.average(y[:, 1])
-        else:
-            return 1, np.average(y[:, 0]), np.average(y[:, 1])
-        # end if
-    # end pred_text
-
-    # Get predictions probabilities from file
-    def predictions_from_file(self, text_file):
-        # Get reservoir inputs
-        x = self.generate_test_data_from_text(text_file)
-
-        # Get reservoir response
-        y = self._flow(x)
-
-        # Return probs
-        return np.average(y[:, 0]), np.average(y[:, 1])
-    # end predictions_from_file
-
-    # Get predictions probabilities from file
-    def predictions_from_text(self, text):
-        # Get reservoir inputs
-        x = self._converter(text)
-
-        # Get reservoir response
-        y = self._flow(x)
-
-        # Return probs
-        return np.average(y[:, 0]), np.average(y[:, 1])
-    # end predictions_from_file
+    ##############################################
+    # Static
+    ##############################################
 
 # end RCNLPEchoWordClassifier

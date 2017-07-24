@@ -48,14 +48,24 @@ class TextClassifier(object):
     ##############################################
 
     # Train the model
-    def train(self, x, y):
+    def train(self, x, y, verbose=False):
         """
         Train the model
         :param x: Example's inputs.
         :param y: Example's outputs.
+        :param verbose: Verbosity
         """
         pass
     # end train
+
+    # Finalize model training
+    def finalize(self):
+        """
+        Finalize model training
+        """
+        self._finalize_training()
+        self._training_finalized = True
+    # end finalize
 
     ##############################################
     # Override
@@ -77,6 +87,15 @@ class TextClassifier(object):
         # Classify the document
         return self._classify(x)
     # end __class__
+
+    # To str
+    def __str__(self):
+        """
+        To string
+        :return:
+        """
+        pass
+    # end __str__
 
     ##############################################
     # Private
