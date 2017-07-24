@@ -187,11 +187,12 @@ class Metrics:
 
     # Classification success rate
     @staticmethod
-    def success_rate(classifier, test_set):
+    def success_rate(classifier, test_set, verbose=False):
         """
         Classification success rate
         :param classifier: Classifier to test
         :param test_set : Test set
+        :param verbose: Verbosity
         :return: Classification success rate
         """
         # Counters
@@ -200,7 +201,11 @@ class Metrics:
 
         # For each elements
         for xy in test_set:
-            if classifier(xy[0]) == xy[1]:
+            prediction, probs = classifier(xy[0])
+            if verbose:
+                print(probs)
+            # end if
+            if prediction == xy[1]:
                 success += 1.0
             # end if
             count += 1.0

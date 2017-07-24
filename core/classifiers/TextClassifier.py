@@ -59,12 +59,14 @@ class TextClassifier(object):
     # end train
 
     # Finalize model training
-    def finalize(self):
+    def finalize(self, verbose=False):
         """
         Finalize model training
         """
-        self._finalize_training()
-        self._training_finalized = True
+        if not self._training_finalized:
+            self._finalize_training(verbose)
+            self._training_finalized = True
+        # end if
     # end finalize
 
     # Predict the class
@@ -76,6 +78,14 @@ class TextClassifier(object):
         """
         return self._classify(x)
     # end predict
+
+    # Reset the classifier
+    def reset(self):
+        """
+        Reset the classifier
+        """
+        pass
+    # end reset
 
     ##############################################
     # Override
@@ -122,9 +132,10 @@ class TextClassifier(object):
     # end _classify
 
     # Finalize the training
-    def _finalize_training(self):
+    def _finalize_training(self, verbose=False):
         """
         Finalize training.
+        :param verbose: Verbosity
         """
         pass
     # end _finalize_training

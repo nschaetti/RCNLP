@@ -25,15 +25,19 @@
 import io
 import os
 import argparse
-import matplotlib.pyplot as plt
 import pickle
 import numpy as np
 import spacy
-from core.converters.RCNLPPosConverter import RCNLPPosConverter
-from core.converters.RCNLPTagConverter import RCNLPTagConverter
-from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
-from core.converters.RCNLPFuncWordConverter import RCNLPFuncWordConverter
+from scipy import stats
+from core.converters.PosConverter import PosConverter
+from core.converters.TagConverter import TagConverter
+from core.converters.WVConverter import WVConverter
+from core.converters.FuncWordConverter import FuncWordConverter
 from core.classifiers.EchoWordClassifier import EchoWordClassifier
+from core.classifiers.SLTextClassifier import SLTextClassifier
+from core.classifiers.TFIDFTextClassifier import TFIDFTextClassifier
+from core.classifiers.SL2GramTextClassifier import SL2GramTextClassifier
+from core.classifiers.TFIDF2GramTextClassifier import TFIDF2GramTextClassifier
 from core.tools.RCNLPLogging import RCNLPLogging
 from core.tools.Metrics import Metrics
 
@@ -52,10 +56,39 @@ rc_size = 100  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.1
+sl_smoothing_param = 0.5
 
 ####################################################
 # Functions
 ####################################################
+
+
+# Create model
+def create_model(name):
+    """
+    Create classifier model
+    :param name: Classifier's name
+    :return:
+    """
+    if name == 'SLTextClassifier-DP':
+        return SLTextClassifier(classes=[0, 1], smoothing="dp", smoothing_param=sl_smoothing_param)
+    elif name == 'SLTextClassifier-JM':
+        return SLTextClassifier(classes=[0, 1], smoothing="jm", smoothing_param=sl_smoothing_param)
+    elif name == 'TFIDFTextClassifier':
+        return TFIDFTextClassifier(classes=[0, 1])
+    elif name == 'EchoWordClassifier':
+        return EchoWordClassifier(classes=[0, 1], size=rc_size, input_scaling=rc_input_scaling,
+                                  leak_rate=rc_leak_rate,
+                                  input_sparsity=rc_input_sparsity, converter=converter,
+                                  spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
+    elif name == 'SL2GramTextClassifier-DP':
+        return SL2GramTextClassifier(classes=[0, 1], smoothing="dp", smoothing_param=sl_smoothing_param)
+    elif name == 'SL2GramTextClassifier-JM':
+        return SL2GramTextClassifier(classes=[0, 1], smoothing="jm", smoothing_param=sl_smoothing_param)
+    elif name == 'TFIDF2GramTextClassifier':
+        return TFIDF2GramTextClassifier(classes=[0, 1])
+    # end if
+# end create_model
 
 ####################################################
 # Main function
@@ -95,13 +128,13 @@ if __name__ == "__main__":
 
     # Choose a text to symbol converter
     if args.converter == "pos":
-        converter = RCNLPPosConverter(resize=args.in_components, pca_model=pca_model)
+        converter = PosConverter(resize=args.in_components, pca_model=pca_model)
     elif args.converter == "tag":
-        converter = RCNLPTagConverter(resize=args.in_components, pca_model=pca_model)
+        converter = TagConverter(resize=args.in_components, pca_model=pca_model)
     elif args.converter == "fw":
-        converter = RCNLPFuncWordConverter(resize=args.in_components, pca_model=pca_model)
+        converter = FuncWordConverter(resize=args.in_components, pca_model=pca_model)
     else:
-        converter = RCNLPWordVectorConverter(resize=args.in_components, pca_model=pca_model)
+        converter = WVConverter(resize=args.in_components, pca_model=pca_model)
     # end if
 
     # Prepare training and test set indexes.
@@ -115,59 +148,103 @@ if __name__ == "__main__":
                                     input_sparsity=rc_input_sparsity, converter=converter,
                                     spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
 
-    # Array for results
-    average_success_rates = np.array([])
+    # Models
+    models = list()
+    models.append(('SLTextClassifier-DP', 1, np.zeros(args.k)))
+    models.append(('SLTextClassifier-JM', 1, np.zeros(args.k)))
+    models.append(('TFIDFTextClassifier', 1, np.zeros(args.k)))
+    models.append(('EchoWordClassifier', 40, np.zeros(args.k)))
+    models.append(('SL2GramTextClassifier-DP', 1, np.zeros(args.k)))
+    models.append(('SL2GramTextClassifier-JM', 1, np.zeros(args.k)))
+    models.append(('TFIDF2GramTextClassifier', 1, np.zeros(args.k)))
 
-    # k-Fold cross validation
-    for k in range(0, args.k):
-        # Prepare training and test set.
-        test_set_indexes = indexes[k]
-        training_set_indexes = indexes
-        training_set_indexes = np.delete(training_set_indexes, k, axis=0)
-        training_set_indexes.shape = (100 - n_fold_samples)
+    # For each model
+    for model in models:
+        # Log
+        print(u"For model {}".format(model[0]))
 
-        # Add examples
-        for author_index, author_id in enumerate((args.author1, args.author2)):
-            author_path = os.path.join(args.dataset, "total", author_id)
-            for file_index in training_set_indexes:
-                file_path = os.path.join(author_path, str(file_index) + ".txt")
-                classifier.train(open(file_path, 'r').read(), author_index)
-            # end for
-        # end for
+        # Array for results
+        success_rates = np.zeros((args.k, model[1]))
 
-        # Finalize model training
-        classifier.finalize()
+        # For each sample
+        for s in range(0, model[1]):
+            # Get model
+            classifier = create_model(model[0])
 
-        # Init test epoch
-        test_set = list()
+            # Log
+            print(u"\tFor sample {}/{}".format(s+1, model[1]))
 
-        # Get text
-        for author_index, author_id in enumerate((args.author1, args.author2)):
-            author_path = os.path.join(args.dataset, "total", str(author_id))
-            for file_index in test_set_indexes:
-                file_path = os.path.join(author_path, str(file_index) + ".txt")
+            # k-Fold cross validation
+            for k in range(0, args.k):
+                # Prepare training and test set.
+                test_set_indexes = indexes[k]
+                training_set_indexes = indexes
+                training_set_indexes = np.delete(training_set_indexes, k, axis=0)
+                training_set_indexes.shape = (100 - n_fold_samples)
 
-                # Document success rate
-                if not args.sentence:
-                    test_set.append((io.open(file_path, 'r').read(), author_index))
-                else:
-                    # Sentence success rate
-                    nlp = spacy.load(args.lang)
-                    doc = nlp(io.open(file_path, 'r').read())
-                    for sentence in doc.sents:
-                        test_set.append((sentence, author_index))
+                # Add examples
+                for author_index, author_id in enumerate((args.author1, args.author2)):
+                    author_path = os.path.join(args.dataset, "total", author_id)
+                    for file_index in training_set_indexes:
+                        file_path = os.path.join(author_path, str(file_index) + ".txt")
+                        classifier.train(io.open(file_path, 'r').read(), author_index)
                     # end for
-                # end if
+                # end for
+
+                # Finalize model training
+                classifier.finalize(verbose=False)
+
+                # Init test epoch
+                test_set = list()
+
+                # Get text
+                for author_index, author_id in enumerate((args.author1, args.author2)):
+                    author_path = os.path.join(args.dataset, "total", str(author_id))
+                    for file_index in test_set_indexes:
+                        file_path = os.path.join(author_path, str(file_index) + ".txt")
+                        # Document success rate
+                        if not args.sentence:
+                            test_set.append((io.open(file_path, 'r').read(), author_index))
+                        else:
+                            # Sentence success rate
+                            nlp = spacy.load(args.lang)
+                            doc = nlp(io.open(file_path, 'r').read())
+                            for sentence in doc.sents:
+                                test_set.append((sentence, author_index))
+                            # end for
+                        # end if
+                    # end for
+                # end for
+
+                # Success rate
+                success_rate = Metrics.success_rate(classifier, test_set, verbose=False)
+                print(u"\t\t{} - Success rate : {}".format(k, success_rate))
+
+                # Save result
+                success_rates[k, s] = success_rate
+
+                # Reset classifier
+                classifier.reset()
             # end for
         # end for
 
-        # Save result
-        average_success_rates = np.append(average_success_rates, Metrics.success_rate(classifier, test_set))
+        # Average results
+        model[2] = np.average(success_rates, axis=1)
+
+        # Log success
+        logging.save_results(u"\tSuccess rate ", np.average(model[2]), display=True)
+        logging.save_results(u"\tSuccess rate std ", np.std(model[2]), display=True)
     # end for
 
-    # Log success
-    logging.save_results("Success rate ", np.average(average_success_rates), display=True)
-    logging.save_results("Success rate std ", np.std(average_success_rates), display=True)
+    # Compare results
+    for model1 in models:
+        print(model1[0])
+        for model2 in models:
+            if model1[0] == model2[0]:
+                logging.save_results(u"\t{} : {}".format(model2[0], stats.ttest_rel(model1[2], model2[2]).pvalue * 100))
+            # end if
+        # end for
+    # end for
 
     # Open logging dir
     logging.open_dir()

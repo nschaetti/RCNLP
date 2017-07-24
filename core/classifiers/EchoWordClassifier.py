@@ -29,7 +29,7 @@ import Oger
 import mdp
 from datetime import datetime
 from sys import getsizeof
-from core.converters.RCNLPConverter import RCNLPConverter
+from core.converters.Converter import Converter
 from .TextClassifier import TextClassifier
 
 
@@ -103,6 +103,12 @@ class EchoWordClassifier(TextClassifier):
 
         # Flow
         self._flow = mdp.Flow([self._reservoir, self._readout], verbose=0)
+
+        # Examples
+        self._examples = dict()
+
+        # Not finalized
+        self._training_finalized = False
     # end reset
 
     # Train
@@ -127,7 +133,7 @@ class EchoWordClassifier(TextClassifier):
         To string
         :return:
         """
-        return "EchoWordClassifier(n_classes={}, size={}, spectral_radius={}, leaky_rate={}, mem_size={}o)".format(
+        return u"EchoWordClassifier(n_classes={}, size={}, spectral_radius={}, leaky_rate={}, mem_size={}o)".format(
             self._n_classes, self._output_dim, self._spectral_radius, self._leak_rate, getsizeof(self))
     # end __str__
 
@@ -136,16 +142,20 @@ class EchoWordClassifier(TextClassifier):
     ##############################################
 
     # Finalize the training phase
-    def _finalize_training(self):
+    def _finalize_training(self, verbose=False):
         """
         Finalize the training phase
+        :param verbose: Verbosity
         """
         # Inputs outputs
         X = list()
         Y = list()
 
         # For each training text file
-        for text in self._examples.keys():
+        for index, text in enumerate(self._examples.keys()):
+            if verbose:
+                print(u"Training on {}/{}...".format(index, len(self._examples.keys())))
+            # end if
             x, y = self._generate_training_data(text, self._examples[text])
             X.append(x)
             Y.append(y)
@@ -155,8 +165,8 @@ class EchoWordClassifier(TextClassifier):
         data = [None, zip(X, Y)]
 
         # Pre-log
-        if self._verbose:
-            print("Training model...")
+        if verbose:
+            print(u"Training model...")
             print(datetime.now().strftime("%H:%M:%S"))
         # end if
 
@@ -164,7 +174,7 @@ class EchoWordClassifier(TextClassifier):
         self._flow.train(data)
 
         # Post-log
-        if self._verbose:
+        if verbose:
             print(datetime.now().strftime("%H:%M:%S"))
         # end if
     # end _finalize_training
@@ -200,7 +210,7 @@ class EchoWordClassifier(TextClassifier):
         reps = self._converter(text)
 
         # Generate x and y
-        return RCNLPConverter.generate_data_set_inputs(reps, self._n_classes, author)
+        return Converter.generate_data_set_inputs(reps, self._n_classes, author)
     # end generate_training_data
 
     # Generate text data from text file

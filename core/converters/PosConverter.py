@@ -27,7 +27,7 @@ import spacy
 from Converter import Converter
 
 
-class RCNLPPosConverter(Converter):
+class PosConverter(Converter):
     """
     Convert text to Part-Of-Speech symbols.
     """
@@ -40,7 +40,7 @@ class RCNLPPosConverter(Converter):
         :param tag_to_symbol: Tag to symbol conversion array.
         :param resize: Reduce dimensionality.
         """
-        super(RCNLPPosConverter, self).__init__(lang, tag_to_symbol, resize, pca_model)
+        super(PosConverter, self).__init__(lang, tag_to_symbol, resize, pca_model)
         self._fill_in = fill_in
     # end __init__
 

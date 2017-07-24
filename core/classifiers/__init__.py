@@ -22,4 +22,11 @@
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from RCNLPTextClassifier import *
+from .EchoLetterClassifier import *
+from .EchoWordClassifier import *
+from .KLDivergenceTextClassifier import *
+from SL2GramTextClassifier import *
+from SLTextClassifier import *
+from .TextClassifier import *
+from .TFIDF2GramTextClassifier import *
+from .TFIDFTextClassifier import *
