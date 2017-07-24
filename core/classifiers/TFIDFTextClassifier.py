@@ -161,7 +161,7 @@ class TFIDFTextClassifier(TextClassifier):
     # end _classify
 
     # Finalize the training
-    def _finalize_training(self):
+    def _finalize_training(self, verbose=False):
         """
         Finalize the training
         """
