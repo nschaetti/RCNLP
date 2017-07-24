@@ -25,10 +25,10 @@
 import numpy as np
 import spacy
 import scipy.signal as sig
-from RCNLPConverter import RCNLPConverter
+from Converter import Converter
 
 
-class WVConverter(RCNLPConverter):
+class WVConverter(Converter):
     """
     Convert text to word vectors.
     """

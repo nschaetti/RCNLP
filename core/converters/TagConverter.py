@@ -24,10 +24,10 @@
 
 import numpy as np
 import spacy
-from RCNLPConverter import RCNLPConverter
+from Converter import Converter
 
 
-class TagConverter(RCNLPConverter):
+class TagConverter(Converter):
     """
     Convert text to Part-Of-Speech Tags symbols.
     """

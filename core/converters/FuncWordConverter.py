@@ -24,10 +24,10 @@
 
 import numpy as np
 import spacy
-from RCNLPConverter import RCNLPConverter
+from Converter import Converter
 
 
-class FuncWordConverter(RCNLPConverter):
+class FuncWordConverter(Converter):
     """
     Convert text to function word symbols.
     """

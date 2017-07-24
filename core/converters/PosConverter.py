@@ -24,10 +24,10 @@
 
 import numpy as np
 import spacy
-from RCNLPConverter import RCNLPConverter
+from Converter import Converter
 
 
-class RCNLPPosConverter(RCNLPConverter):
+class RCNLPPosConverter(Converter):
     """
     Convert text to Part-Of-Speech symbols.
     """

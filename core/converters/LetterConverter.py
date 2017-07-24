@@ -24,14 +24,11 @@
 
 # Imports
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-from RCNLPConverter import RCNLPConverter
-import spacy
+from Converter import Converter
 
 
 # Converter from letter to symbols
-class LetterConverter(RCNLPConverter):
+class LetterConverter(Converter):
     """
     Convert letter to symbols
     """
