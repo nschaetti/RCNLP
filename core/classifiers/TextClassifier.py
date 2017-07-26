@@ -84,7 +84,8 @@ class TextClassifier(object):
         """
         Reset the classifier
         """
-        pass
+        self._reset_model()
+        self._training_finalized = False
     # end reset
 
     ##############################################
@@ -139,6 +140,14 @@ class TextClassifier(object):
         """
         pass
     # end _finalize_training
+
+    # Reset the model
+    def _reset_model(self):
+        """
+        Reset the model
+        """
+        pass
+    # end _reset_model
 
     # Transform int to class name
     def _int_to_class(self, index):

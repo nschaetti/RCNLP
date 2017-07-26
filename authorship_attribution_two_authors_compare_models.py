@@ -153,10 +153,10 @@ if __name__ == "__main__":
     models.append({'name': "SLTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': True})
     models.append({'name': "SLTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': True})
     models.append({'name': "TFIDFTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': False})
-    models.append({'name': "EchoWordClassifier", "samples": 40, "results": np.zeros(args.k), 'skip': False})
-    models.append({'name': "SL2GramTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': False})
-    models.append({'name': "SL2GramTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': False})
-    models.append({'name': "TFIDF2GramTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': False})
+    models.append({'name': "EchoWordClassifier", "samples": 40, "results": np.zeros(args.k), 'skip': True})
+    models.append({'name': "SL2GramTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': True})
+    models.append({'name': "SL2GramTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': True})
+    models.append({'name': "TFIDF2GramTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': True})
 
     # For each model
     for model in models:
@@ -218,7 +218,7 @@ if __name__ == "__main__":
                     # end for
 
                     # Success rate
-                    success_rate = Metrics.success_rate(classifier, test_set, verbose=True)
+                    success_rate = Metrics.success_rate(classifier, test_set, verbose=False)
                     print(u"\t\t{} - Success rate : {}".format(k, success_rate))
 
                     # Save result

@@ -139,7 +139,7 @@ class TFIDFTextClassifier(TextClassifier):
 
         d_vector = np.zeros(len(self._collection_counts.keys()), dtype='float64')
         for token in tokens:
-            token_text = token.text.lower().replace(u" ", u"").replace(u"\t", u"")
+            token_text = token.text.lower()
             try:
                 index = self._token_position[token_text]
                 d_vector[index] += 1.0
@@ -157,7 +157,7 @@ class TFIDFTextClassifier(TextClassifier):
             similarity[index] = TFIDFTextClassifier.cosinus_similarity(self._classes_vectors[c], d_vector)
         # end for
 
-        return self._classes_counts.keys()[np.argmax(similarity)]
+        return self._classes_counts.keys()[np.argmax(similarity)], similarity
     # end _classify
 
     # Finalize the training
@@ -176,9 +176,13 @@ class TFIDFTextClassifier(TextClassifier):
         for token in self._collection_counts.keys():
             count = 0.0
             for c in self._classes_counts.keys():
-                if self._classes_counts[c][token] > 0:
-                    count += 1.0
+                try:
+                    if self._classes_counts[c][token] > 0:
+                        count += 1.0
                     # end if
+                except KeyError:
+                    pass
+                # end try
             # end for
             self._classes_frequency[token] = count
             # end for
@@ -186,21 +190,48 @@ class TFIDFTextClassifier(TextClassifier):
 
         # For each classes
         for c in self._classes_counts.keys():
-            c_vector = np.zeros(len(self._classes_counts[c].keys()), dtype='float64')
+            c_vector = np.zeros(len(self._collection_counts.keys()), dtype='float64')
             for token in self._collection_counts.keys():
                 index = self._token_position[token]
-                c_vector[index] = self._classes_counts[c][token]
+                try:
+                    c_vector[index] = self._classes_counts[c][token]
+                except KeyError:
+                    c_vector[index] = 0
+                # end try
             # end for
             c_vector /= float(self._classes_token_count[c])
             for token in self._collection_counts.keys():
                 index = self._token_position[token]
                 if self._classes_frequency[token] > 0:
                     c_vector[index] *= math.log(self._n_classes / self._classes_frequency[token])
-                    # end if
+                # end if
             # end for
             self._classes_vectors[c] = c_vector
         # end for
     # end _finalize_training
+
+    # Reset the classifier
+    def _reset_model(self):
+        """
+        Reset the classifier
+        """
+        # Properties
+        self._n_tokens = 0.0
+        self._n_total_tokens = 0.0
+        self._classes_counts = dict()
+        self._classes_token_count = dict()
+        self._collection_counts = dict()
+        self._classes_vectors = dict()
+        self._classes_frequency = dict()
+        self._token_position = dict()
+        self._finalized = False
+
+        # Class counters init
+        for c in self._classes:
+            self._classes_counts[c] = dict()
+            self._classes_token_count[c] = 0.0
+        # end for
+    # end _reset_model
 
     ##############################################
     # Static

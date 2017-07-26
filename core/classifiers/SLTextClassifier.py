@@ -211,6 +211,20 @@ class SLTextClassifier(TextClassifier):
         return result_class, text_probs
     # end _classify
 
+    # Reset the classifier
+    def _reset_model(self):
+        """
+        Reset the classifier
+        """
+        # Properties
+        self._n_token = 0
+        self._n_total_token = 0
+
+        # Init dictionaries
+        self._token_counters = dict()
+        self._class_counters = dict()
+    # end reset
+
     ##############################################
     # Private
     ##############################################

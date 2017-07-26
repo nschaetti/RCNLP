@@ -91,26 +91,6 @@ class EchoWordClassifier(TextClassifier):
     # Public
     ##############################################
 
-    # Reset learning but keep reservoir
-    def reset(self):
-        """
-        Reset model learned parameters
-        """
-        del self._readout, self._flow
-
-        # Ridge Regression
-        self._readout = Oger.nodes.RidgeRegressionNode()
-
-        # Flow
-        self._flow = mdp.Flow([self._reservoir, self._readout], verbose=0)
-
-        # Examples
-        self._examples = dict()
-
-        # Not finalized
-        self._training_finalized = False
-    # end reset
-
     # Train
     def train(self, x, y, verbose=False):
         """
@@ -197,6 +177,23 @@ class EchoWordClassifier(TextClassifier):
         # Get maximum probability class
         return np.argmax(np.average(y, 0)), np.average(y, 0)
     # end _classify
+
+    # Reset learning but keep reservoir
+    def _reset_model(self):
+        """
+        Reset model learned parameters
+        """
+        del self._readout, self._flow
+
+        # Ridge Regression
+        self._readout = Oger.nodes.RidgeRegressionNode()
+
+        # Flow
+        self._flow = mdp.Flow([self._reservoir, self._readout], verbose=0)
+
+        # Examples
+        self._examples = dict()
+    # end _reset_model
 
     # Generate training data from text
     def _generate_training_data(self, text, author):
