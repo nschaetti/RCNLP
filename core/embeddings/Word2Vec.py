@@ -95,6 +95,8 @@ class Word2Vec(object):
         Normalize each vector
         """
         for word in self._voc.keys():
+            # print(self._voc[word])
+            # print(LA.norm(self._voc[word]))
             self._voc[word] /= LA.norm(self._voc[word])
         # end for
     # end normalize
@@ -107,7 +109,7 @@ class Word2Vec(object):
         """
         words_matrix = np.zeros((len(self._voc.keys()), self._dim))
         for index, word in enumerate(self.words()):
-            words_matrix[:, index] = self._voc[word]
+            words_matrix[index, :] = self._voc[word]
         # end for
         return words_matrix
     # end get_matrix
