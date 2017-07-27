@@ -52,7 +52,7 @@ ex_instance = "Two Authors compare models"
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
 rc_input_scaling = 0.25  # Input scaling
-rc_size = 500  # Reservoir size
+rc_size = 100  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.1
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str, help="Dataset's directory")
     parser.add_argument("--author1", type=str, help="First author", default="1")
     parser.add_argument("--author2", type=str, help="Second author", default="2")
-    parser.add_argument("--lang", type=str, help="Language (ar, en, es, pt)", default='en')
+    parser.add_argument("--lang", type=str, help="Language (en_core_web_md, ar, en, es, pt)", default='en_core_web_md')
     parser.add_argument("--converter", type=str, help="The text converter to use (fw, pos, tag, wv)", default='pos')
     parser.add_argument("--pca-model", type=str, help="PCA model to load", default=None)
     parser.add_argument("--in-components", type=int, help="Number of principal component to reduce inputs to",
@@ -128,13 +128,13 @@ if __name__ == "__main__":
 
     # Choose a text to symbol converter
     if args.converter == "pos":
-        converter = PosConverter(resize=args.in_components, pca_model=pca_model)
+        converter = PosConverter(lang=args.lang, resize=args.in_components, pca_model=pca_model)
     elif args.converter == "tag":
-        converter = TagConverter(resize=args.in_components, pca_model=pca_model)
+        converter = TagConverter(lang=args.lang, resize=args.in_components, pca_model=pca_model)
     elif args.converter == "fw":
-        converter = FuncWordConverter(resize=args.in_components, pca_model=pca_model)
+        converter = FuncWordConverter(lang=args.lang, resize=args.in_components, pca_model=pca_model)
     else:
-        converter = WVConverter(resize=args.in_components, pca_model=pca_model)
+        converter = WVConverter(lang=args.lang, resize=args.in_components, pca_model=pca_model)
     # end if
 
     # Prepare training and test set indexes.
@@ -150,9 +150,9 @@ if __name__ == "__main__":
 
     # Models
     models = list()
-    models.append({'name': "SLTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': True})
+    models.append({'name': "SLTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': False})
     models.append({'name': "SLTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': True})
-    models.append({'name': "TFIDFTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': False})
+    models.append({'name': "TFIDFTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': True})
     models.append({'name': "EchoWordClassifier", "samples": 40, "results": np.zeros(args.k), 'skip': True})
     models.append({'name': "SL2GramTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': True})
     models.append({'name': "SL2GramTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': True})
@@ -240,10 +240,11 @@ if __name__ == "__main__":
 
     # Compare results
     for model1 in models:
-        print(model1[0])
+        print(model1['name'])
         for model2 in models:
-            if model1[0] == model2[0]:
-                logging.save_results(u"\t{} : {}".format(model2[0], stats.ttest_rel(model1[2], model2[2]).pvalue * 100))
+            if model1['name'] == model2['name']:
+                logging.save_results(u"\t{} : {}".format(model2['name'], stats.ttest_rel(model1['results'], model2[
+                    'results']).pvalue * 100))
             # end if
         # end for
     # end for

@@ -77,35 +77,40 @@ class TFIDFTextClassifier(TextClassifier):
         :param verbose: Verbosity
         """
         # Tokens
-        tokens = spacy.load('en')(x)
+        tokens = spacy.load(self._lang)(x)
 
         # For each token
         for token in tokens:
-            token_text = token.text.lower()
-            # Classes counts
-            try:
-                self._classes_counts[y][token_text] += 1.0
-            except KeyError:
-                self._classes_counts[y][token_text] = 1.0
-                self._n_tokens += 1.0
-            # end try
+            # Filtering
+            filtered, token_text = self._filter_token(token)
+            token_text = token_text.lower()
 
-            # Collection counts
-            try:
-                self._collection_counts[token_text] += 1.0
-            except KeyError:
-                self._collection_counts[token_text] = 1.0
-            # end try
+            if filtered:
+                # Classes counts
+                try:
+                    self._classes_counts[y][token_text] += 1.0
+                except KeyError:
+                    self._classes_counts[y][token_text] = 1.0
+                    self._n_tokens += 1.0
+                # end try
 
-            # Classes token count
-            try:
-                self._classes_token_count[y] += 1.0
-            except KeyError:
-                self._classes_token_count[y] = 1.0
-            # end try
+                # Collection counts
+                try:
+                    self._collection_counts[token_text] += 1.0
+                except KeyError:
+                    self._collection_counts[token_text] = 1.0
+                # end try
 
-            # Total tokens
-            self._n_total_tokens += 1.0
+                # Classes token count
+                try:
+                    self._classes_token_count[y] += 1.0
+                except KeyError:
+                    self._classes_token_count[y] = 1.0
+                # end try
+
+                # Total tokens
+                self._n_total_tokens += 1.0
+            # end if
         # end for
     # end train
 
@@ -135,17 +140,22 @@ class TFIDFTextClassifier(TextClassifier):
         :return: A tuple with found class and values per classes.
         """
         # Tokens
-        tokens = spacy.load('en')(x)
+        tokens = spacy.load(self._lang)(x)
 
         d_vector = np.zeros(len(self._collection_counts.keys()), dtype='float64')
         for token in tokens:
-            token_text = token.text.lower()
-            try:
-                index = self._token_position[token_text]
-                d_vector[index] += 1.0
-            except KeyError:
-                pass
-            # end try
+            # Filtering
+            filtered, token_text = self._filter_token(token)
+            token_text = token_text.lower()
+
+            if filtered:
+                try:
+                    index = self._token_position[token_text]
+                    d_vector[index] += 1.0
+                except KeyError:
+                    pass
+                # end try
+            # end if
         # end for
 
         # Normalize vector

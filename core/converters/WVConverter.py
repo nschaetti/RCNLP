@@ -48,7 +48,6 @@ class WVConverter(Converter):
         :param text: The text to convert.
         :return: An numpy array of inputs.
         """
-
         # Load language model
         nlp = spacy.load(self._lang)
 
@@ -59,13 +58,23 @@ class WVConverter(Converter):
         doc_array = np.array([])
 
         # For each token
+        ok = False
         for index, word in enumerate(doc):
             if word not in exclude:
-                word_vector = word.vector
-                if index == 0:
-                    doc_array = word_vector
-                else:
-                    doc_array = np.vstack((doc_array, word_vector))
+                word_text = word.text
+                word_text = word_text.replace(u"\n", u"")
+                word_text = word_text.replace(u"\t", u"")
+                word_text = word_text.replace(u"\r", u"")
+                if len(word_text) > 0:
+                    word_vector = word.vector
+                    if np.average(word_vector) != 0:
+                        if not ok:
+                            doc_array = word_vector
+                            ok = True
+                        else:
+                            doc_array = np.vstack((doc_array, word_vector))
+                        # end if
+                    # end if
                 # end if
             # end if
         # end for

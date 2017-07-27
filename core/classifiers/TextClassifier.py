@@ -22,6 +22,9 @@
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+# Import
+import numpy as np
+
 
 # Text classifier
 class TextClassifier(object):
@@ -33,14 +36,16 @@ class TextClassifier(object):
     _training_finalized = False
 
     # Constructor
-    def __init__(self, classes):
+    def __init__(self, classes, lang='en_core_web_md'):
         """
         Constructor
         :param classes: Classes
+        :param lang: Spacy language
         """
         # Properties
         self._classes = classes
         self._n_classes = len(classes)
+        self._lang = lang
     # end __init__
 
     ##############################################
@@ -121,6 +126,26 @@ class TextClassifier(object):
     ##############################################
     # Private
     ##############################################
+
+    # Filter token
+    def _filter_token(self, word):
+        """
+        Filter token
+        :param token:
+        :return:
+        """
+        word_text = word.text
+        word_text = word_text.replace(u"\n", u"")
+        word_text = word_text.replace(u"\t", u"")
+        word_text = word_text.replace(u"\r", u"")
+        if len(word_text) > 0:
+            word_vector = word.vector
+            if np.average(word_vector) != 0:
+                return True, word_text
+            # end if
+        # end if
+        return False, ""
+    # end if
 
     # Classify a document
     def _classify(self, x):

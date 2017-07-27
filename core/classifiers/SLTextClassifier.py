@@ -78,35 +78,40 @@ class SLTextClassifier(TextClassifier):
         :param verbose: Verbosity
         """
         # Tokens
-        tokens = spacy.load('en')(x)
+        tokens = spacy.load(self._lang)(x)
 
         # For each token
         for token in tokens:
-            token_text = token.text.lower()
-            # Token counters
-            try:
-                self._token_counters[token_text] += 1.0
-            except KeyError:
-                self._token_counters[token_text] = 1.0
-                self._n_token += 1.0
-            # end try
+            # Filtering
+            filtered, token_text = self._filter_token(token)
+            token_text = token_text.lower()
 
-            # Create entry in class counter
-            try:
-                probs = self._class_counters[token_text]
-            except KeyError:
-                self._class_counters[token_text] = dict()
-            # end try
+            if filtered:
+                # Token counters
+                try:
+                    self._token_counters[token_text] += 1.0
+                except KeyError:
+                    self._token_counters[token_text] = 1.0
+                    self._n_token += 1.0
+                # end try
 
-            # Class counters
-            if y in self._class_counters[token_text].keys():
-                self._class_counters[token_text][y] += 1.0
-            else:
-                self._class_counters[token_text][y] = 1.0
+                # Create entry in class counter
+                try:
+                    probs = self._class_counters[token_text]
+                except KeyError:
+                    self._class_counters[token_text] = dict()
+                # end try
+
+                # Class counters
+                if y in self._class_counters[token_text].keys():
+                    self._class_counters[token_text][y] += 1.0
+                else:
+                    self._class_counters[token_text][y] = 1.0
+                # end if
+
+                # One more token
+                self._n_total_token += 1.0
             # end if
-
-            # One more token
-            self._n_total_token += 1.0
         # end token
     # end train
 
@@ -169,33 +174,42 @@ class SLTextClassifier(TextClassifier):
         # end for
 
         # Parse text
-        text_tokens = spacy.load('en')(x)
+        text_tokens = spacy.load(self._lang)(x)
 
         # Get all tokens
         tokens = list()
         for token in text_tokens:
-            tokens.append(token)
+            # Filtering
+            filtered, token_text = self._filter_token(token)
+            if filtered:
+                tokens.append(token)
+            # end if
         # end for
 
         # For each token
         for token in tokens:
-            token_text = token.text.lower()
+            # Filtering
+            filtered, token_text = self._filter_token(token)
+            token_text = token_text.lower()
 
-            # Get token probs for each class
-            try:
-                token_probs = self[token_text]
-                collection_prob = self._token_counters[token_text] / self._n_total_token
-            except KeyError:
-                continue
-            # end try
+            if filtered:
+                print(u"#" + token_text + u"#")
+                # Get token probs for each class
+                try:
+                    token_probs = self[token_text]
+                    collection_prob = self._token_counters[token_text] / self._n_total_token
+                except KeyError:
+                    continue
+                # end try
 
-            # For each class
-            for c in self._classes:
-                smoothed_value = SLTextClassifier.smooth(self._smoothing, token_probs[c], collection_prob,
-                                                         len(tokens),
-                                                         param=self._smoothing_param)
-                text_probs[c] *= decimal.Decimal(smoothed_value)
-            # end for
+                # For each class
+                for c in self._classes:
+                    smoothed_value = SLTextClassifier.smooth(self._smoothing, token_probs[c], collection_prob,
+                                                             len(tokens),
+                                                             param=self._smoothing_param)
+                    text_probs[c] *= decimal.Decimal(smoothed_value)
+                # end for
+            # end if
         # end for
 
         # Get highest prob
