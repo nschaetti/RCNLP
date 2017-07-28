@@ -193,7 +193,6 @@ class SLTextClassifier(TextClassifier):
             token_text = token_text.lower()
 
             if filtered:
-                print(u"#" + token_text + u"#")
                 # Get token probs for each class
                 try:
                     token_probs = self[token_text]
