@@ -17,6 +17,15 @@ class WordAlreadyExistsException(Exception):
     pass
 # end WordAlreadyExistsException
 
+
+# One-hot vector representations are full
+class OneHotVectorFullException(Exception):
+    """
+    One-hot vector representations are full
+    """
+    pass
+# end OneHotVectorFullException
+
 ###########################################################
 # Class
 ###########################################################
@@ -39,6 +48,9 @@ class Word2Vec(object):
         self._voc = dict()
         self._mapper = mapper
         self._sparsity = sparsity
+        self._word_pos = 0
+        self._word_index = dict()
+        self._index_word = dict()
     # end __init__
 
     ###########################################
@@ -83,8 +95,16 @@ class Word2Vec(object):
         else:
             if self._mapper == "dense":
                 self._voc[word] = Word2Vec.dense(self._dim)
-            else:
+            elif self._mapper == "sparse":
                 self._voc[word] = Word2Vec.sparse(self._dim, self._sparsity)
+            elif self._mapper == "one-hot":
+                if self._word_pos < self._dim:
+                    self._voc[word] = self._one_hot()
+                    self._word_index[word] = self._word_pos - 1
+                    self._index_word[self._word_pos-1] = word
+                else:
+                    raise OneHotVectorFullException("One-hot vector representations are full")
+                # end if
             # end
         # end if
     # end create_word_vector
@@ -113,6 +133,20 @@ class Word2Vec(object):
         # end for
         return words_matrix
     # end get_matrix
+
+    # Get word by index
+    def get_word_by_index(self, index):
+        """
+        Get word by index
+        :param index: Index
+        :return:
+        """
+        return self._index_word[index]
+    # end get_word_by_index
+
+    ###########################################
+    # Override
+    ###########################################
 
     # Get a word vector
     def __getitem__(self, item):
@@ -234,5 +268,17 @@ class Word2Vec(object):
         vec[np.random.random(dim) > (1.0 - sparsity)] = 1.0
         return vec
     # end _dense_mapper
+
+    # Map word to a one-hot vector
+    def _one_hot(self):
+        """
+        Map word to a one-hot vector
+        :return: A new one-hot vector
+        """
+        vec = np.zeros(self._dim)
+        vec[self._word_pos] = 1.0
+        self._word_pos += 1
+        return vec
+    # end one_hot
 
 # end Word2Vec

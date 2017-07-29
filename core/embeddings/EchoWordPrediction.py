@@ -11,6 +11,15 @@ from .WordPredictionDataset import WordPredictionDataset
 # Exceptions
 ###########################################################
 
+
+# Network net trained
+class ReservoirNotTrainedException(Exception):
+    """
+    Network net trained
+    """
+    pass
+# end ReservoirNotTrainedException
+
 ###########################################################
 # Class
 ###########################################################
@@ -41,6 +50,7 @@ class EchoWordPrediction(object):
         self._size = size
         self._leaky_rate = leaky_rate
         self._spectral_radius = spectral_radius
+        self._trained = False
 
         # Wordprediction dataset generator
         self._dataset = WordPredictionDataset(word2vec=word2vec)
@@ -82,6 +92,9 @@ class EchoWordPrediction(object):
 
         # Train the model
         self._flow.train(data)
+
+        # Trained
+        self._trained = True
     # end train
 
     # Predict the next word
@@ -118,6 +131,19 @@ class EchoWordPrediction(object):
 
         return new_vectors
     # end predict
+
+    # Get word embeddings
+    def get_word_embeddings(self):
+        """
+        Get word embeddings
+        :return:
+        """
+        if self._trained:
+            return self._readout.beta
+        else:
+            raise ReservoirNotTrainedException(u"Reservoir not trained!")
+        # end if
+    # end get_word_embeddings
 
     # Reset learning but keep reservoir
     def reset(self):

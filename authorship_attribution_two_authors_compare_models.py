@@ -52,7 +52,7 @@ ex_instance = "Two Authors compare models"
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
 rc_input_scaling = 0.25  # Input scaling
-rc_size = 100  # Reservoir size
+rc_size = 1000  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.1
@@ -112,6 +112,7 @@ if __name__ == "__main__":
     parser.add_argument("--sentence", action='store_true', help="Test sentence classification rate?", default=False)
     parser.add_argument("--k", type=int, help="n-Fold Cross Validation", default=10)
     parser.add_argument("--samples", type=int, help="Number of reservoir to sample", default=50)
+    parser.add_argument("--verbose", action='store_true', help="Verbose mode", default=False)
     args = parser.parse_args()
 
     # Logging
@@ -150,10 +151,10 @@ if __name__ == "__main__":
 
     # Models
     models = list()
-    models.append({'name': "SLTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': False})
+    models.append({'name': "SLTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': True})
     models.append({'name': "SLTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': True})
     models.append({'name': "TFIDFTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': True})
-    models.append({'name': "EchoWordClassifier", "samples": 40, "results": np.zeros(args.k), 'skip': True})
+    models.append({'name': "EchoWordClassifier", "samples": 40, "results": np.zeros(args.k), 'skip': False})
     models.append({'name': "SL2GramTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': True})
     models.append({'name': "SL2GramTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': True})
     models.append({'name': "TFIDF2GramTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': True})
@@ -193,7 +194,7 @@ if __name__ == "__main__":
                     # end for
 
                     # Finalize model training
-                    classifier.finalize(verbose=False)
+                    classifier.finalize(verbose=args.verbose)
 
                     # Init test epoch
                     test_set = list()
@@ -218,7 +219,7 @@ if __name__ == "__main__":
                     # end for
 
                     # Success rate
-                    success_rate = Metrics.success_rate(classifier, test_set, verbose=False)
+                    success_rate = Metrics.success_rate(classifier, test_set, verbose=args.verbose)
                     print(u"\t\t{} - Success rate : {}".format(k, success_rate))
 
                     # Save result

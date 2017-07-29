@@ -85,34 +85,40 @@ class SL2GramTextClassifier(TextClassifier):
 
         # For each token
         for token in tokens:
-            if preceding_token is not None:
-                token_text = preceding_token.text.lower() + u" " + token.text.lower()
-                # Token counters
-                try:
-                    self._token_counters[token_text] += 1.0
-                except KeyError:
-                    self._token_counters[token_text] = 1.0
-                    self._n_token += 1.0
-                # end try
+            # Filtering
+            filtered, token_text = self._filter_token(token)
+            token_text = token_text.lower()
 
-                # Create entry in class counter
-                try:
-                    probs = self._class_counters[token_text]
-                except KeyError:
-                    self._class_counters[token_text] = dict()
-                # end try
+            if filtered:
+                if preceding_token is not None:
+                    token_text = preceding_token.text.lower() + u" " + token_text
+                    # Token counters
+                    try:
+                        self._token_counters[token_text] += 1.0
+                    except KeyError:
+                        self._token_counters[token_text] = 1.0
+                        self._n_token += 1.0
+                    # end try
 
-                # Class counters
-                if y in self._class_counters[token_text].keys():
-                    self._class_counters[token_text][y] += 1.0
-                else:
-                    self._class_counters[token_text][y] = 1.0
+                    # Create entry in class counter
+                    try:
+                        probs = self._class_counters[token_text]
+                    except KeyError:
+                        self._class_counters[token_text] = dict()
+                    # end try
+
+                    # Class counters
+                    if y in self._class_counters[token_text].keys():
+                        self._class_counters[token_text][y] += 1.0
+                    else:
+                        self._class_counters[token_text][y] = 1.0
+                    # end if
+
+                    # One more token
+                    self._n_total_token += 1.0
                 # end if
-
-                # One more token
-                self._n_total_token += 1.0
+                preceding_token = token
             # end if
-            preceding_token = token
         # end token
     # end train
 
@@ -180,10 +186,16 @@ class SL2GramTextClassifier(TextClassifier):
         tokens = list()
         preceding_token = None
         for token in text_tokens:
-            if preceding_token is not None:
-                tokens.append(preceding_token.text.lower() + u" " + token.text.lower())
+            # Filtering
+            filtered, token_text = self._filter_token(token)
+            token_text = token_text.lower()
+
+            if filtered:
+                if preceding_token is not None:
+                    tokens.append(preceding_token.text.lower() + u" " + token_text)
+                # end if
+                preceding_token = token
             # end if
-            preceding_token = token
         # end for
 
         # For each token
