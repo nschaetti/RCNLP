@@ -61,11 +61,11 @@ class ReverseConverter(Converter):
         for word in doc:
             tokens.append(word.text)
         # end for
-        tokens = tokens.reverse()
+        tokens.reverse()
 
         # Del spacy nlp
         del nlp
-
+        print(tokens)
         return u" ".join(tokens)
     # end convert
 

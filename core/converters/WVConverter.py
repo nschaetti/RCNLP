@@ -52,7 +52,11 @@ class WVConverter(Converter):
         nlp = spacy.load(self._lang)
 
         # Process text
-        doc = nlp(text)
+        if self._upper_level is not None:
+            doc = nlp(self._upper_level(text))
+        else:
+            doc = nlp(text)
+        # end if
 
         # Resulting numpy array
         doc_array = np.array([])

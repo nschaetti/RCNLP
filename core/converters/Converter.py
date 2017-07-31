@@ -35,7 +35,7 @@ class Converter(object):
     """
 
     # Constructor
-    def __init__(self, lang='en', tag_to_symbol=None, resize=-1, pca_model=None):
+    def __init__(self, lang='en', tag_to_symbol=None, resize=-1, pca_model=None, upper_level=None):
         """
         Constructor
         :param lang: Language model
@@ -46,6 +46,7 @@ class Converter(object):
         self._resize = resize
         self._lang = lang
         self._pca_model = pca_model
+        self._upper_level = upper_level
 
         # Generate tag symbols
         if tag_to_symbol is None:
