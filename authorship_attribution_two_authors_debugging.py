@@ -43,11 +43,11 @@ ex_name = "Authorship Attribution"
 ex_instance = "Two Authors Two Sided Inputs"
 
 # Reservoir Properties
-rc_leak_rate = 0.1  # Leak rate
+rc_leak_rate = 0.01  # Leak rate
 rc_input_scaling = 0.25  # Input scaling
-rc_size = 2000  # Reservoir size
-rc_spectral_radius = 0.99  # Spectral radius
-rc_w_sparsity = 0.5
+rc_size = 1000  # Reservoir size
+rc_spectral_radius = 0.1  # Spectral radius
+rc_w_sparsity = 0.1
 rc_input_sparsity = 0.1
 
 ####################################################
