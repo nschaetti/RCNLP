@@ -52,7 +52,7 @@ ex_instance = "Two Authors compare models"
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
 rc_input_scaling = 0.25  # Input scaling
-rc_size = 1000  # Reservoir size
+rc_size = 2000  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.1
@@ -154,10 +154,10 @@ if __name__ == "__main__":
     models.append({'name': "SLTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': True})
     models.append({'name': "SLTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': True})
     models.append({'name': "TFIDFTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': True})
-    models.append({'name': "EchoWordClassifier", "samples": 40, "results": np.zeros(args.k), 'skip': False})
-    models.append({'name': "SL2GramTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': True})
-    models.append({'name': "SL2GramTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': True})
-    models.append({'name': "TFIDF2GramTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': True})
+    models.append({'name': "EchoWordClassifier", "samples": 10, "results": np.zeros(args.k), 'skip': True})
+    models.append({'name': "SL2GramTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': False})
+    models.append({'name': "SL2GramTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': False})
+    models.append({'name': "TFIDF2GramTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': False})
 
     # For each model
     for model in models:
@@ -228,6 +228,7 @@ if __name__ == "__main__":
                     # Reset classifier
                     classifier.reset()
                 # end for
+                print(u"\t\tAll - Success rate : {}".format(np.average(success_rates[:, s])))
             # end for
 
             # Average results

@@ -25,20 +25,14 @@
 import io
 import os
 import argparse
-import matplotlib.pyplot as plt
 import pickle
 import numpy as np
-import Oger
 import spacy
-import mdp
-from core.converters.PosConverter import PosConverter
-from core.converters.TagConverter import TagConverter
 from core.converters.WVConverter import WVConverter
-from core.converters.FuncWordConverter import FuncWordConverter
 from core.converters.ReverseConverter import ReverseConverter
 from core.classifiers.EchoWordClassifier import EchoWordClassifier
 from core.tools.RCNLPLogging import RCNLPLogging
-from core.tools.RCNLPPlotGenerator import RCNLPPlotGenerator
+from core.tools.Metrics import Metrics
 
 #########################################################################
 # Experience settings
@@ -51,7 +45,7 @@ ex_instance = "Two Authors Two Sided Inputs"
 # Reservoir Properties
 rc_leak_rate = 0.1  # Leak rate
 rc_input_scaling = 0.25  # Input scaling
-rc_size = 100  # Reservoir size
+rc_size = 2000  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.1
@@ -90,12 +84,8 @@ if __name__ == "__main__":
     parser.add_argument("--pca-model", type=str, help="PCA model to load", default=None)
     parser.add_argument("--in-components", type=int, help="Number of principal component to reduce inputs to.",
                         default=-1)
-    parser.add_argument("--step", type=float, help="Step for reservoir size value", default=50)
-    parser.add_argument("--min", type=float, help="Minimum reservoir size value", default=10)
-    parser.add_argument("--max", type=float, help="Maximum reservoir size value", default=1000)
-    parser.add_argument("--training-size", type=int, help="Training size", default=90)
-    parser.add_argument("--sentence", action='store_true', help="Test sentence classification rate?", default=False)
-    parser.add_argument("--k", type=int, help="n-Fold Cross Validation.", default=10)
+    parser.add_argument("--K", type=int, help="n-Fold Cross Validation", default=10)
+    parser.add_argument("--k", type=int, help="Fold position to use", default=0)
     args = parser.parse_args()
 
     # Logging
@@ -106,20 +96,62 @@ if __name__ == "__main__":
 
     # PCA model
     pca_model = None
-    if args.pca_model != "":
+    if args.pca_model is not None:
         pca_model = pickle.load(open(args.pca_model, 'r'))
     # end if
 
     # Base converter
-    base_converter = ReverseConverter(pca_model=pca_model)
+    base_converter = ReverseConverter()
 
     # Reverse WV converter
-    reverse_wv_converter = WVConverter(upper_level=pca_model)
+    reverse_wv_converter = WVConverter(pca_model=pca_model, upper_level=base_converter)
 
     # WV converter
-    wv_converter = WVConverter()
+    wv_converter = WVConverter(pca_model=pca_model)
 
-    print(reverse_wv_converter(u"Hi, what is your name?"))
-    print(wv_converter(u"Hi, what is your name?"))
+    # Prepare training and test set indexes.
+    n_fold_samples = int(100 / args.K)
+    indexes = np.arange(0, 100, 1)
+    indexes.shape = (args.K, n_fold_samples)
+
+    # Prepare training and test set.
+    test_set_indexes = indexes[args.k]
+    training_set_indexes = indexes
+    training_set_indexes = np.delete(training_set_indexes, args.k, axis=0)
+    training_set_indexes.shape = (100 - n_fold_samples)
+
+    # Classifier
+    classifier = EchoWordClassifier(classes=[0, 1], size=rc_size, input_scaling=rc_input_scaling,
+                                    leak_rate=rc_leak_rate,
+                                    input_sparsity=rc_input_sparsity, converter=wv_converter,
+                                    spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
+
+    # Add examples
+    for author_index, author_id in enumerate((args.author1, args.author2)):
+        author_path = os.path.join(args.dataset, "total", author_id)
+        for file_index in training_set_indexes:
+            file_path = os.path.join(author_path, str(file_index) + ".txt")
+            classifier.train(io.open(file_path, 'r').read(), author_index)
+            # end for
+    # end for
+
+    # Finalize model training
+    classifier.finalize(verbose=True)
+
+    # Init test epoch
+    test_set = list()
+
+    # Get text
+    for author_index, author_id in enumerate((args.author1, args.author2)):
+        author_path = os.path.join(args.dataset, "total", str(author_id))
+        for file_index in test_set_indexes:
+            file_path = os.path.join(author_path, str(file_index) + ".txt")
+            test_set.append((io.open(file_path, 'r').read(), author_index))
+        # end for
+    # end for
+
+    # Success rate
+    success_rate = Metrics.success_rate(classifier, test_set, verbose=True, debug=True)
+    print(u"Success rate : {}".format(success_rate))
 
 # end if
