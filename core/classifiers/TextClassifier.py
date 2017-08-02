@@ -93,6 +93,24 @@ class TextClassifier(object):
         self._training_finalized = False
     # end reset
 
+    # Show the debuging informations
+    def debug(self):
+        """
+        Show the debugging informations
+        :return:
+        """
+        pass
+    # end debug
+
+    # Get debugging data
+    def get_debugging_data(self):
+        """
+        Get debugging data
+        :return: debugging data
+        """
+        pass
+    # end _get_debugging_data
+
     ##############################################
     # Override
     ##############################################

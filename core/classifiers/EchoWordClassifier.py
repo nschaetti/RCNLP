@@ -31,6 +31,7 @@ from datetime import datetime
 from sys import getsizeof
 from core.converters.Converter import Converter
 from .TextClassifier import TextClassifier
+import matplotlib.pyplot as plt
 
 
 # Echo Word classifier model
@@ -70,6 +71,7 @@ class EchoWordClassifier(TextClassifier):
         self._spectral_radius = spectral_radius
         self._converter = converter
         self._examples = dict()
+        self._last_y = []
 
         # Create the reservoir
         self._reservoir = Oger.nodes.LeakyReservoirNode(input_dim=self._input_dim, output_dim=self._output_dim,
@@ -102,6 +104,31 @@ class EchoWordClassifier(TextClassifier):
         self._examples[x] = y
         self._verbose = verbose
     # end train
+
+    # Show debugging informations
+    def debug(self):
+        """
+        Show debugging informations
+        """
+        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
+        plt.xlim([0, len(self._last_y[:, 0])])
+        plt.ylim([0.0, 1.0])
+        for author in range(self._n_classes):
+            plt.plot(self._last_y[:, author], color=colors[author], label=u"Author {}".format(author))
+            plt.plot(np.repeat(np.average(self._last_y[:, author]), len(self._last_y[:, author])), color=colors[author],
+                     label=u"Author {} average".format(author), linestyle=u"dashed")
+        # end for
+        plt.show()
+    # end debug
+
+    # Get debugging data
+    def get_debugging_data(self):
+        """
+        Get debugging data
+        :return: debugging data
+        """
+        return self._last_y
+    # end _get_debugging_data
 
     ##############################################
     # Override
@@ -173,6 +200,9 @@ class EchoWordClassifier(TextClassifier):
         y = self._flow(x)
         y -= np.min(y)
         y /= np.max(y)
+
+        # Save last y
+        self._last_y = y
 
         # Get maximum probability class
         return np.argmax(np.average(y, 0)), np.average(y, 0)
