@@ -54,10 +54,11 @@ class EchoWordPrediction(object):
 
         # Wordprediction dataset generator
         self._dataset = WordPredictionDataset(word2vec=word2vec)
-
+        print(word2vec.get_dimension())
+        print(self._size)
         # Create the reservoir
         self._reservoir = Oger.nodes.LeakyReservoirNode(input_dim=word2vec.get_dimension(),
-                                                        output_dim=word2vec.get_dimension(),
+                                                        output_dim=self._size,
                                                         input_scaling=input_scaling,
                                                         leak_rate=leaky_rate, spectral_radius=spectral_radius,
                                                         sparsity=input_sparsity, w_sparsity=w_sparsity)

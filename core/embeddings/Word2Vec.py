@@ -3,6 +3,7 @@
 import numpy as np
 import spacy
 from numpy import linalg as LA
+import scipy.sparse as sp
 
 ###########################################################
 # Exceptions
@@ -144,6 +145,15 @@ class Word2Vec(object):
         return self._index_word[index]
     # end get_word_by_index
 
+    # Get word count
+    def get_n_words(self):
+        """
+        Get word count
+        :return: word count
+        """
+        return self._word_pos
+    # end get_n_words
+
     ###########################################
     # Override
     ###########################################
@@ -194,7 +204,11 @@ class Word2Vec(object):
             if doc_array.size == 0:
                 doc_array = self[word.text]
             else:
-                doc_array = np.vstack((doc_array, self[word.text]))
+                if self._mapper == "one-hot":
+                    doc_array = sp.vstack(blocks=[doc_array, self[word.text]])
+                else:
+                    doc_array = np.vstack((doc_array, self[word.text]))
+                # end if
             # end if
         # end for
 
@@ -275,8 +289,9 @@ class Word2Vec(object):
         Map word to a one-hot vector
         :return: A new one-hot vector
         """
-        vec = np.zeros(self._dim)
+        vec = np.zeros(self._dim, dtype='float64')
         vec[self._word_pos] = 1.0
+        vec = sp.csr_matrix(vec)
         self._word_pos += 1
         return vec
     # end one_hot
