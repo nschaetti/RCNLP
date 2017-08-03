@@ -29,11 +29,11 @@ import matplotlib.pyplot as plt
 import pickle
 import numpy as np
 import Oger
-from core.converters.RCNLPPosConverter import RCNLPPosConverter
-from core.converters.RCNLPTagConverter import RCNLPTagConverter
-from core.converters.RCNLPWordVectorConverter import RCNLPWordVectorConverter
-from core.converters.RCNLPFuncWordConverter import RCNLPFuncWordConverter
-from core.classifiers.RCNLPEchoWordClassifier import RCNLPEchoWordClassifier
+from core.converters.PosConverter import PosConverter
+from core.converters.TagConverter import TagConverter
+from core.converters.WVConverter import WVConverter
+from core.converters.FuncWordConverter import FuncWordConverter
+from core.classifiers.EchoWordClassifier import EchoWordClassifier
 from core.tools.RCNLPLogging import RCNLPLogging
 
 #########################################################################
@@ -87,13 +87,13 @@ if __name__ == "__main__":
 
     # >> 1. Choose a text to symbol converter.
     if args.converter == "pos":
-        converter = RCNLPPosConverter(resize=args.in_components, pca_model=pca_model)
+        converter = PosConverter(resize=args.in_components, pca_model=pca_model)
     elif args.converter == "tag":
-        converter = RCNLPTagConverter(resize=args.in_components, pca_model=pca_model)
+        converter = TagConverter(resize=args.in_components, pca_model=pca_model)
     elif args.converter == "fw":
-        converter = RCNLPFuncWordConverter(resize=args.in_components, pca_model=pca_model)
+        converter = FuncWordConverter(resize=args.in_components, pca_model=pca_model)
     else:
-        converter = RCNLPWordVectorConverter(resize=args.in_components, pca_model=pca_model)
+        converter = WVConverter(resize=args.in_components, pca_model=pca_model)
     # end if
 
     # >> 2. Prepare training and test set indexes.
@@ -117,7 +117,7 @@ if __name__ == "__main__":
         test_set_indexes.shape = (100 - n_training_samples)
 
         # >> 6. Create Echo Word Classifier
-        classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
+        classifier = EchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
                                              input_sparsity=rc_input_sparsity, converter=converter, n_classes=2,
                                              spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
 

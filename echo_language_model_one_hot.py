@@ -33,6 +33,7 @@ from numpy import linalg as LA
 from sklearn.manifold import TSNE
 import pylab as plt
 from sklearn.decomposition import PCA
+import logging
 
 #########################################################################
 # Experience settings
@@ -43,12 +44,12 @@ ex_name = "Echo Word Prediction Experience"
 ex_instance = "Echo Language Model One Hot"
 
 # Reservoir Properties
-rc_leak_rate = 1.0  # Leak rate
+rc_leak_rate = 0.1  # Leak rate
 rc_input_scaling = 1.0  # Input scaling
 rc_size = 300  # Reservoir size
 rc_spectral_radius = 0.9  # Spectral radius
 rc_w_sparsity = 0.1
-rc_input_sparsity = 0.1
+rc_input_sparsity = 0.01
 wp_vocabulary_size = 5000
 
 ####################################################
@@ -65,9 +66,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="RCNLP - Word prediction with Echo State Network and one-hot vector")
 
     # Argument
-    args = parser.parse_args()
     parser.add_argument("--dataset", type=str, help="Dataset's directory", required=True)
     parser.add_argument("--size", type=int, help="How many file to take in the dataset", default=-1)
+    args = parser.parse_args()
 
     # Print precision
     np.set_printoptions(precision=3)
@@ -86,15 +87,18 @@ if __name__ == "__main__":
             break
         # end if
         file_path = os.path.join(args.dataset, file)
+        print(u"Adding text file {}/{} : {}".format(index+1, args.size, file_path))
         esn_word_prediction.add(io.open(file_path, 'r').read())
     # end for
 
     # Train
+    print(u"Training...")
     esn_word_prediction.train()
 
     # Get word embeddings
     word_embeddings = esn_word_prediction.get_word_embeddings()
-
+    print(word_embeddings.shape)
+    exit()
     # Reduce with t-SNE
     model = TSNE(n_components=2, random_state=0)
     reduced_matrix = model.fit_transform(word_embeddings)
