@@ -1,21 +1,25 @@
 import Oger
 import mdp.utils
 import numpy as np
+import scipy.sparse as sp
 import collections
 import matplotlib.pyplot as plt
+import sys
 import matplotlib.cm as cm
+
 try:
-	import cudamat as cm
+    import cudamat as cm
 except:
-	pass
+    pass
+
 
 # TODO: MDP parallelization assumes that nodes are state-less when executing! The current ReservoirNode
-# does not adhere to this and therefor are not parallelizable. A solution is to make the state local. 
-# But this again breaks if we start doing some form of on-line learning. In this case we need, or, 
-# fork-join but this only work when training (and joining is often not possible), or do not have 
+# does not adhere to this and therefor are not parallelizable. A solution is to make the state local.
+# But this again breaks if we start doing some form of on-line learning. In this case we need, or,
+# fork-join but this only work when training (and joining is often not possible), or do not have
 # fork-join in training mode which will force synchronous execution.
 
-# TODO: leaky neuron is also broken when parallel! 
+# TODO: leaky neuron is also broken when parallel!
 
 class ReservoirNode(mdp.Node):
     """
@@ -24,7 +28,8 @@ class ReservoirNode(mdp.Node):
 
     def __init__(self, input_dim=None, output_dim=None, spectral_radius=0.9,
                  nonlin_func=np.tanh, reset_states=True, bias_scaling=0, input_scaling=1, dtype='float64', _instance=0,
-                 w_in=None, w=None, w_bias=None, sparsity = None, input_set = [1.0,-1.0], w_sparsity = None, set_initial_state = False, my_initial_state = None):
+                 w_in=None, w=None, w_bias=None, sparsity=None, input_set=[1.0, -1.0], w_sparsity=None,
+                 set_initial_state=False, my_initial_state=None):
         """ Initializes and constructs a random reservoir.
         Parameters are:
             - input_dim: input dimensionality
@@ -34,7 +39,7 @@ class ReservoirNode(mdp.Node):
             - input_scaling: scaling of the input weight matrix, default: 1
             - spectral_radius: scaling of the reservoir weight matrix, default value: 0.9
             - reset_states: should the reservoir states be reset to zero at each call of execute? Default True, set to False for use in FeedbackFlow
-        
+
         Weight matrices are either generated randomly or passed at construction time.
         if w, w_in or w_bias are not given in the constructor, they are created randomly:
             - input matrix : input_scaling * uniform weights in [-1, 1]
@@ -59,7 +64,7 @@ class ReservoirNode(mdp.Node):
         self._instance = _instance
         # Non-linear function
         self.nonlin_func = nonlin_func
-        
+
         # Parametre en plus
         self.sparsity = sparsity
         self.input_set = input_set
@@ -86,15 +91,15 @@ class ReservoirNode(mdp.Node):
             # Call the initialize function to create the weight matrices
             self.initialize()
 
-
-    # Override the standard output_dim getter and setter property, 
+    # Override the standard output_dim getter and setter property,
     # to enable changing the output_dim (i.e. the number
     # of neurons) afterwards during optimization
-    def get_output_dim(self): 
+    def get_output_dim(self):
         return self._output_dim
 
-    def set_output_dim(self, value): 
+    def set_output_dim(self, value):
         self._output_dim = value
+
     output_dim = property(get_output_dim, set_output_dim, doc="Output dimensions")
 
     def is_trainable(self):
@@ -131,17 +136,30 @@ class ReservoirNode(mdp.Node):
         if self.w_in_initial is None:
             if self.sparsity == None:
                 # Initialize it to uniform random values using input_scaling
-                self.w_in = self.input_scaling * (mdp.numx.random.randint(0, 2, (self.output_dim, self.input_dim)) * 2 - 1)
+                self.w_in = self.input_scaling * (
+                mdp.numx.random.randint(0, 2, (self.output_dim, self.input_dim)) * 2 - 1)
             else:
                 # Initialize it to uniform random value using sparsity and input set
-                self.w_in = self.input_scaling * mdp.numx.random.choice(mdp.numx.append([0],self.input_set),(self.output_dim, self.input_dim),p=np.append([1.0-self.sparsity],[self.sparsity/len(self.input_set)]*len(self.input_set)))
-                #self.w_in = mdp.numx.random.choice(mdp.numx.append([0],),(self.output_dim, self.input_dim),p=np.append([1.0-self.sparsity],[self.sparsity/len(self.input_set)]*len(self.input_set)))
+                print("Initializing W_in to uniform random value using sparsity and input set")
+                self.w_in = self.input_scaling * mdp.numx.random.choice(mdp.numx.append([0], self.input_set),
+                                                                        (self.output_dim, self.input_dim),
+                                                                        p=np.append([1.0 - self.sparsity], [
+                                                                            self.sparsity / len(self.input_set)] * len(
+                                                                            self.input_set)))
+                print(self.w_in.shape)
+                if self.sparsity is not None and self.sparsity <= 0.05:
+                    print("Transforming W_in to sparse matrix representation")
+                    self.w_in = sp.csr_matrix(self.w_in)
+                    print(self.w_in.shape)
+                # end if
+                print("Initialized")
+                # self.w_in = mdp.numx.random.choice(mdp.numx.append([0],),(self.output_dim, self.input_dim),p=np.append([1.0-self.sparsity],[self.sparsity/len(self.input_set)]*len(self.input_set)))
         else:
             if callable(self.w_in_initial):
-                self.w_in = self.w_in_initial(self.output_dim, self.input_dim) # If it is a function, call it
+                self.w_in = self.w_in_initial(self.output_dim, self.input_dim)  # If it is a function, call it
             else:
-                self.w_in = self.w_in_initial.copy() # else just copy it
-        
+                self.w_in = self.w_in_initial.copy()  # else just copy it
+
         # Check if dimensions of the weight matrix match the dimensions of the node inputs and outputs
         if self.w_in.shape != (self.output_dim, self.input_dim):
             exception_str = 'Shape of given w_in does not match input/output dimensions of node. '
@@ -155,9 +173,9 @@ class ReservoirNode(mdp.Node):
             self.w_bias = self.bias_scaling * (mdp.numx.random.rand(1, self.output_dim) * 2 - 1)
         else:
             if callable(self.w_bias_initial):
-                self.w_bias = self.w_bias_initial(self.output_dim) # If it is a function, call it
+                self.w_bias = self.w_bias_initial(self.output_dim)  # If it is a function, call it
             else:
-                self.w_bias = self.w_bias_initial.copy()   # else just copy it
+                self.w_bias = self.w_bias_initial.copy()  # else just copy it
 
         # Check if dimensions of the weight matrix match the dimensions of the node inputs and outputs
         if self.w_bias.shape != (1, self.output_dim):
@@ -172,35 +190,35 @@ class ReservoirNode(mdp.Node):
                 self.w = mdp.numx.random.randn(self.output_dim, self.output_dim)
                 # scale it to spectral radius
             else:
-				# Create sparse W
-                self.w = mdp.numx.random.choice([0.0,1.0],(self.output_dim, self.output_dim), p = [1.0-self.w_sparsity,self.w_sparsity])
+                # Create sparse W
+                self.w = mdp.numx.random.choice([0.0, 1.0], (self.output_dim, self.output_dim),
+                                                p=[1.0 - self.w_sparsity, self.w_sparsity])
                 self.w[self.w == 1] = mdp.numx.random.rand(len(self.w[self.w == 1]))
-                
+
             self.w *= self.spectral_radius / Oger.utils.get_spectral_radius(self.w)
         else:
             if callable(self.w_initial):
-                self.w = self.w_initial(self.output_dim) # If it is a function, call it
+                self.w = self.w_initial(self.output_dim)  # If it is a function, call it
             else:
-                self.w = self.w_initial.copy()   # else just copy it
+                self.w = self.w_initial.copy()  # else just copy it
             self.w *= self.spectral_radius / Oger.utils.get_spectral_radius(self.w)
-        
+
         # Check if dimensions of the weight matrix match the dimensions of the node inputs and outputs
         if self.w.shape != (self.output_dim, self.output_dim):
             exception_str = 'Shape of given w does not match input/output dimensions of node. '
             exception_str += 'Output dim: ' + str(self.output_dim) + '. '
             exception_str += 'Shape of w: ' + str(self.w_in.shape)
             raise mdp.NodeException(exception_str)
-        
+
         # Initial state
         if self.set_initial_state == False:
             self.initial_state = mdp.numx.zeros((1, self.output_dim))
         else:
             self.initial_state = np.array([self.my_initial_state])
-        
+
         self.states = mdp.numx.zeros((1, self.output_dim))
 
         self._is_initialized = True
-
 
     def _get_supported_dtypes(self):
         return ['float32', 'float64']
@@ -222,12 +240,14 @@ class ReservoirNode(mdp.Node):
                 self.initial_state = np.array([self.my_initial_state])
         else:
             self.initial_state = mdp.numx.atleast_2d(self.states[-1, :])
-
+        print(x.shape)
         steps = x.shape[0]
         states = []
         # Pre-allocate the state vector, adding the initial state
         try:
+            print(self.output_dim)
             states = mdp.numx.concatenate((self.initial_state, mdp.numx.zeros((steps, self.output_dim))))
+            print(states.shape)
         except MemoryError as e:
             print "Memory Error"
             print e
@@ -237,24 +257,34 @@ class ReservoirNode(mdp.Node):
 
         # Loop over the input data and compute the reservoir states
         for n in range(steps):
-            states[n + 1, :] = nonlinear_function_pointer(mdp.numx.dot(self.w, states[n, :]) + mdp.numx.dot(self.w_in, x[n, :]) + self.w_bias)
+            print(type(x))
+            if x is scipy.sparse.csr.csr_matrix:
+                x_input = x[n, :].toarray()
+                x_input.shape = x.shape[1]
+                print(x_input.shape)
+                states[n + 1, :] = nonlinear_function_pointer(
+                    mdp.numx.dot(self.w, states[n, :]) + mdp.numx.dot(self.w_in, x_input) + self.w_bias)
+            else:
+                states[n + 1, :] = nonlinear_function_pointer(
+                    mdp.numx.dot(self.w, states[n, :]) + mdp.numx.dot(self.w_in, x[n, :]) + self.w_bias)
+            # end if
             self._post_update_hook(states, x, n)
 
         # Save the state for re-initialization in case reset_states = False
         self.states = states[1:, :]
-        
+
         # Return the whole state matrix except the initial state
         return self.states
 
     def _post_update_hook(self, states, input, timestep):
-        """ Hook which gets executed after the state update equation for every timestep. Do not use this to change the state of the 
+        """ Hook which gets executed after the state update equation for every timestep. Do not use this to change the state of the
             reservoir (e.g. to train internal weights) if you want to use parallellization - use the TrainableReservoirNode in that case.
         """
         pass
 
 
 class LeakyReservoirNode(ReservoirNode):
-    """Reservoir node with leaky integrator neurons (a first-order low-pass filter added to the output of a standard neuron). 
+    """Reservoir node with leaky integrator neurons (a first-order low-pass filter added to the output of a standard neuron).
     """
 
     def __init__(self, leak_rate=1.0, *args, **kwargs):
@@ -277,15 +307,17 @@ class LeakyReservoirNode(ReservoirNode):
         """
         super(LeakyReservoirNode, self).__init__(*args, **kwargs)
 
-        # Leak rate, if 1 it is a standard neuron, lower values give slower dynamics 
+        # Leak rate, if 1 it is a standard neuron, lower values give slower dynamics
         self.leak_rate = leak_rate
 
     def _post_update_hook(self, states, input, timestep):
         states[timestep + 1, :] = (1 - self.leak_rate) * states[timestep, :] + self.leak_rate * states[timestep + 1, :]
 
+
 class BandpassReservoirNode(ReservoirNode):
-    """Reservoir node with bandpass neurons (an Nth-order band-pass filter added to the output of a standard neuron). 
+    """Reservoir node with bandpass neurons (an Nth-order band-pass filter added to the output of a standard neuron).
     """
+
     def __init__(self, b=mdp.numx.array([[1]]), a=mdp.numx.array([[0]]), *args, **kwargs):
         """Initializes and constructs a random reservoir with band-pass neurons.
            Parameters are:
@@ -308,8 +340,10 @@ class BandpassReservoirNode(ReservoirNode):
         self.a = a
         self.b = b
         super(BandpassReservoirNode, self).__init__(*args, **kwargs)
-        self.input_buffer = collections.deque([mdp.numx.zeros(self.output_dim)] * self.b.shape[1], maxlen=self.b.shape[1])
-        self.output_buffer = collections.deque([mdp.numx.zeros(self.output_dim)] * self.a.shape[1], maxlen=self.a.shape[1])
+        self.input_buffer = collections.deque([mdp.numx.zeros(self.output_dim)] * self.b.shape[1],
+                                              maxlen=self.b.shape[1])
+        self.output_buffer = collections.deque([mdp.numx.zeros(self.output_dim)] * self.a.shape[1],
+                                               maxlen=self.a.shape[1])
 
     def _post_update_hook(self, states, input, timestep):
         self.input_buffer.appendleft(states[timestep + 1, :])
@@ -318,11 +352,13 @@ class BandpassReservoirNode(ReservoirNode):
         states[timestep + 1, :] = t1 - t2
         self.output_buffer.appendleft(states[timestep, :])
 
+
 class TrainableReservoirNode(ReservoirNode):
     """A reservoir node that allows on-line training of the internal connections. Use
     this node for this purpose instead of implementing the _post_update_hook in the
-    normal ReservoirNode as this is incompatible with parallelization. 
+    normal ReservoirNode as this is incompatible with parallelization.
     """
+
     def is_trainable(self):
         return True
 
@@ -345,9 +381,11 @@ class TrainableReservoirNode(ReservoirNode):
         """
         pass
 
+
 class HebbReservoirNode(TrainableReservoirNode):
     """This node does nothing good, it is just a demo of training a reservoir.
     """
+
     def _post_train_update_hook(self, states, input, timestep):
         self.w -= 0.01 * mdp.utils.mult(states[timestep + 1:timestep + 2, :].T, states[timestep:timestep + 1, :])
         self.w_in -= 0.01 * mdp.utils.mult(states[timestep + 1:timestep + 2, :].T, input[timestep:timestep + 1, :])
@@ -358,12 +396,13 @@ class GaussianIPReservoirNode(TrainableReservoirNode):
     ''' This ReservoirNode is adaptable using IP. Only works for tanh nonlinearities.
         This node is trainable. Can be used for pre-adaptation.
         See Verstraeten, D., 'Reservoir Computing: computation with dynamical Systems', PhD Thesis, Ghent University for theory.
-        
+
         Constructor parameters (in addition to the standard reservoir ones):
             - mu: desired mean of the output distribution (default: 0)
             - sigma_squared: desired variance of the output distribution (default: .04)
             - eta: learning rate (default: .0001)
     '''
+
     def __init__(self, eta=.0001, mu=0, sigma_squared=.04, keep_parameter_history=True, *args, **kwargs):
         super(GaussianIPReservoirNode, self).__init__(*args, **kwargs)
         self.a = np.ones(self.output_dim)
@@ -407,6 +446,7 @@ class GaussianIPReservoirNode(TrainableReservoirNode):
             self.dbb.append(db)
             self.bb.append(self.w_bias.copy())
 
+
 def get_specrad(Ac):
     """Get spectral radius of A using the power method."""
 
@@ -443,8 +483,8 @@ def get_specrad(Ac):
 
 class CUDAReservoirNode(mdp.Node):
     def __init__(self, input_dim, output_dim, spectral_radius=.9, leak_rate=1,
-                                             input_scaling=1, bias_scaling=0):
-        super(CUDAReservoirNode, self).__init__(input_dim=input_dim, output_dim=output_dim,)
+                 input_scaling=1, bias_scaling=0):
+        super(CUDAReservoirNode, self).__init__(input_dim=input_dim, output_dim=output_dim, )
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.leak_rate = leak_rate
@@ -465,7 +505,6 @@ class CUDAReservoirNode(mdp.Node):
         self.current_state = cm.empty((self.output_dim, 1))
         self.new_state = cm.empty((self.output_dim, 1))
 
-
     def _execute(self, x):
         n = x.shape[0]
         # Do everything in transpose because row indexing is very expensive.
@@ -475,7 +514,6 @@ class CUDAReservoirNode(mdp.Node):
         self.states.set_col_slice(0, 1, cm.CUDAMatrix(mdp.numx.zeros((self.output_dim, 1))))
 
         for i in range(n):
-
             self.current_state = self.states.get_col_slice(i, i + 1)
             self.new_state = self.states.get_col_slice(i + 1, i + 2)
 
