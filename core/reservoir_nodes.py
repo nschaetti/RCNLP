@@ -6,6 +6,7 @@ import collections
 import matplotlib.pyplot as plt
 import sys
 import matplotlib.cm as cm
+import scipy
 
 try:
     import cudamat as cm
@@ -257,8 +258,8 @@ class ReservoirNode(mdp.Node):
 
         # Loop over the input data and compute the reservoir states
         for n in range(steps):
-            print(type(x))
-            if x is scipy.sparse.csr.csr_matrix:
+            print(str(type(x)))
+            if type(x) == "<class 'scipy.sparse.csr.csr_matrix'>":
                 x_input = x[n, :].toarray()
                 x_input.shape = x.shape[1]
                 print(x_input.shape)
