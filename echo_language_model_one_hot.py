@@ -44,13 +44,13 @@ ex_name = "Echo Word Prediction Experience"
 ex_instance = "Echo Language Model One Hot"
 
 # Reservoir Properties
-rc_leak_rate = 0.1  # Leak rate
+rc_leak_rate = 0.5  # Leak rate
 rc_input_scaling = 1.0  # Input scaling
 rc_size = 300  # Reservoir size
 rc_spectral_radius = 0.9  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.01
-wp_vocabulary_size = 5000
+wp_vocabulary_size = 10000
 
 ####################################################
 # Functions
@@ -67,6 +67,7 @@ if __name__ == "__main__":
 
     # Argument
     parser.add_argument("--dataset", type=str, help="Dataset's directory", required=True)
+    parser.add_argument("--output", type=str, help="Output image", required=True)
     parser.add_argument("--size", type=int, help="How many file to take in the dataset", default=-1)
     parser.add_argument("--sparse", action='store_true', help="Sparse matrix?", default=False)
     parser.add_argument("--log-level", type=int, help="Log level", default=20)
@@ -78,6 +79,7 @@ if __name__ == "__main__":
 
     # Print precision
     np.set_printoptions(precision=3)
+    np.set_printoptions(threshold=np.nan)
 
     # Word2Vec
     word2vec = Word2Vec(dim=wp_vocabulary_size, mapper='one-hot')
@@ -96,6 +98,7 @@ if __name__ == "__main__":
         file_path = os.path.join(args.dataset, file)
         logger.info(u"Adding text file {}/{} : {}".format(index+1, args.size, file_path))
         esn_word_prediction.add(io.open(file_path, 'r').read())
+        logger.info(u"{} total token in word2vec".format(word2vec.get_n_words()))
     # end for
 
     # Train
@@ -110,10 +113,13 @@ if __name__ == "__main__":
 
     # Reduce with t-SNE
     model = TSNE(n_components=2, random_state=0)
-    reduced_matrix = model.fit_transform(word_embeddings)
+    reduced_matrix = model.fit_transform(word_embeddings.T)
+
+    # Word embedding matrix's size
+    logger.info(u"Reduced matrix's size : {}".format(reduced_matrix.shape))
 
     # Show t-SNE
-    plt.figure(figsize=(1024, 1024))
+    plt.figure(figsize=(40, 40), dpi=300)
     max_x = np.amax(reduced_matrix, axis=0)[0]
     max_y = np.amax(reduced_matrix, axis=0)[1]
     min_x = np.amin(reduced_matrix, axis=0)[0]
@@ -121,13 +127,17 @@ if __name__ == "__main__":
     plt.xlim((min_x * 1.2, max_x * 1.2))
     plt.ylim((min_y * 1.2, max_y * 1.2))
     for word_index in np.arange(wp_vocabulary_size):
-        plt.scatter(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], 10)
-        plt.text(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], word2vec.get_word_by_index(word_index),
-                 fontsize=9)
-        """plt.annotate(word2vec.get_word_by_index(word_index),
-                     (reduced_matrix[word_index, 0], reduced_matrix[word_index, 1]),
-                     arrowprops=dict(facecolor='red', shrink=0.025))"""
+        if word2vec.get_word_by_index(word_index) is not None:
+            plt.scatter(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], 0.5)
+            plt.text(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], word2vec.get_word_by_index(word_index),
+                     fontsize=2.5)
+            """plt.annotate(word2vec.get_word_by_index(word_index),
+                         (reduced_matrix[word_index, 0], reduced_matrix[word_index, 1]),
+                         arrowprops=dict(facecolor='red', shrink=0.025))"""
+        # end if
     # end for
-    plt.show()
+
+    # Save image
+    plt.savefig(args.output)
 
 # end if
