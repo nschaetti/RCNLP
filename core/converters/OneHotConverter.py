@@ -114,7 +114,7 @@ class OneHotConverter(Converter):
         Get the input size.
         :return: The input size.
         """
-        return self._word2vec.get_dimension()
+        return self._voc_size
     # end get_n_inputs
 
 # end RCNLPConverter

@@ -52,6 +52,7 @@ class Word2Vec(object):
         self._word_pos = 0
         self._word_index = dict()
         self._index_word = dict()
+        self._word_counter = dict()
     # end __init__
 
     ###########################################
@@ -167,6 +168,20 @@ class Word2Vec(object):
         return self._word_pos
     # end get_n_words
 
+    # Get word count
+    def get_word_count(self, word):
+        """
+        Get word count
+        :param word:
+        :return:
+        """
+        try:
+            return self._word_counter[word]
+        except KeyError:
+            return 0
+        # end try
+    # end get_word_count
+
     ###########################################
     # Override
     ###########################################
@@ -214,6 +229,11 @@ class Word2Vec(object):
 
         # For each word
         for word in doc:
+            try:
+                self._word_counter[word.text] += 1
+            except KeyError:
+                self._word_counter[word.text] = 0
+            # end try
             if doc_array.size == 0:
                 doc_array = self[word.text]
             else:
