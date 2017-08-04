@@ -58,6 +58,15 @@ class Word2Vec(object):
     # Public
     ###########################################
 
+    # Get mapper
+    def get_mapper(self):
+        """
+        Get mapper
+        :return:
+        """
+        return self._mapper
+    # end get_mapper
+
     # Get dimension
     def get_dimension(self):
         """
