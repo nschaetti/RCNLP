@@ -68,7 +68,13 @@ if __name__ == "__main__":
     # Argument
     parser.add_argument("--dataset", type=str, help="Dataset's directory", required=True)
     parser.add_argument("--size", type=int, help="How many file to take in the dataset", default=-1)
+    parser.add_argument("--sparse", action='store_true', help="Sparse matrix?", default=False)
+    parser.add_argument("--log-level", type=int, help="Log level", default=20)
     args = parser.parse_args()
+
+    # Init logging
+    logging.basicConfig(level=args.log_level)
+    logger = logging.getLogger(name="RCNLP")
 
     # Print precision
     np.set_printoptions(precision=3)
@@ -79,7 +85,8 @@ if __name__ == "__main__":
     # ESN for word prediction
     esn_word_prediction = EchoWordPrediction(word2vec=word2vec, size=rc_size, leaky_rate=rc_leak_rate,
                                              spectral_radius=rc_spectral_radius, input_scaling=rc_input_scaling,
-                                             input_sparsity=rc_input_sparsity, w_sparsity=rc_w_sparsity)
+                                             input_sparsity=rc_input_sparsity, w_sparsity=rc_w_sparsity,
+                                             use_sparse_matrix=args.sparse)
 
     # Add text examples
     for index, file in enumerate(os.listdir(args.dataset)):
@@ -87,24 +94,26 @@ if __name__ == "__main__":
             break
         # end if
         file_path = os.path.join(args.dataset, file)
-        print(u"Adding text file {}/{} : {}".format(index+1, args.size, file_path))
+        logger.info(u"Adding text file {}/{} : {}".format(index+1, args.size, file_path))
         esn_word_prediction.add(io.open(file_path, 'r').read())
     # end for
 
     # Train
-    print(u"Training...")
+    logger.info(u"Training...")
     esn_word_prediction.train()
 
     # Get word embeddings
     word_embeddings = esn_word_prediction.get_word_embeddings()
-    print(word_embeddings.shape)
-    exit()
+
+    # Word embedding matrix's size
+    logger.info(u"Word embedding matrix's size : {}".format(word_embeddings.shape))
+
     # Reduce with t-SNE
     model = TSNE(n_components=2, random_state=0)
     reduced_matrix = model.fit_transform(word_embeddings)
 
     # Show t-SNE
-    plt.figure(figsize=(1024, 1024), dpi=300)
+    plt.figure(figsize=(1024, 1024))
     max_x = np.amax(reduced_matrix, axis=0)[0]
     max_y = np.amax(reduced_matrix, axis=0)[1]
     min_x = np.amin(reduced_matrix, axis=0)[0]

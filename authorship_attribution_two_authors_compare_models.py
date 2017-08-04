@@ -154,10 +154,10 @@ if __name__ == "__main__":
     models.append({'name': "SLTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': True})
     models.append({'name': "SLTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': True})
     models.append({'name': "TFIDFTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': True})
-    models.append({'name': "EchoWordClassifier", "samples": 10, "results": np.zeros(args.k), 'skip': True})
-    models.append({'name': "SL2GramTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': False})
-    models.append({'name': "SL2GramTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': False})
-    models.append({'name': "TFIDF2GramTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': False})
+    models.append({'name': "EchoWordClassifier", "samples": 10, "results": np.zeros(args.k), 'skip': False})
+    models.append({'name': "SL2GramTextClassifier-DP", "samples": 1, "results": np.zeros(args.k), 'skip': True})
+    models.append({'name': "SL2GramTextClassifier-JM", "samples": 1, "results": np.zeros(args.k), 'skip': True})
+    models.append({'name': "TFIDF2GramTextClassifier", "samples": 1, "results": np.zeros(args.k), 'skip': True})
 
     # For each model
     for model in models:
