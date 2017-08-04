@@ -50,7 +50,6 @@ rc_size = 300  # Reservoir size
 rc_spectral_radius = 0.9  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.01
-wp_vocabulary_size = 10000
 
 ####################################################
 # Functions
@@ -71,6 +70,8 @@ if __name__ == "__main__":
     parser.add_argument("--size", type=int, help="How many file to take in the dataset", default=-1)
     parser.add_argument("--sparse", action='store_true', help="Sparse matrix?", default=False)
     parser.add_argument("--log-level", type=int, help="Log level", default=20)
+    parser.add_argument("--voc-size", type=int, help="Vocabulary size", default=5000, required=True)
+    parser.add_argument("--loop", type=int, help="Number of loops", default=1)
     args = parser.parse_args()
 
     # Init logging
@@ -82,7 +83,7 @@ if __name__ == "__main__":
     np.set_printoptions(threshold=np.nan)
 
     # Word2Vec
-    word2vec = Word2Vec(dim=wp_vocabulary_size, mapper='one-hot')
+    word2vec = Word2Vec(dim=args.voc_size, mapper='one-hot')
 
     # ESN for word prediction
     esn_word_prediction = EchoWordPrediction(word2vec=word2vec, size=rc_size, leaky_rate=rc_leak_rate,
@@ -90,54 +91,62 @@ if __name__ == "__main__":
                                              input_sparsity=rc_input_sparsity, w_sparsity=rc_w_sparsity,
                                              use_sparse_matrix=args.sparse)
 
-    # Add text examples
-    for index, file in enumerate(os.listdir(args.dataset)):
-        if args.size != -1 and index >= args.size:
-            break
-        # end if
-        file_path = os.path.join(args.dataset, file)
-        logger.info(u"Adding text file {}/{} : {}".format(index+1, args.size, file_path))
-        esn_word_prediction.add(io.open(file_path, 'r').read())
-        logger.info(u"{} total token in word2vec".format(word2vec.get_n_words()))
-    # end for
+    # For each loop
+    for loop in range(args.loop):
+        # Add text examples
+        for index, file in enumerate(os.listdir(args.dataset)):
+            if args.size != -1 and index >= args.size:
+                break
+            # end if
+            file_path = os.path.join(args.dataset, file)
+            logger.info(u"Adding text file {}/{} : {}".format(index+1, args.size, file_path))
+            esn_word_prediction.add(io.open(file_path, 'r').read())
+            logger.info(u"{} total token in word2vec".format(word2vec.get_n_words()))
+        # end for
 
-    # Train
-    logger.info(u"Training...")
-    esn_word_prediction.train()
+        # Train
+        logger.info(u"Training...")
+        esn_word_prediction.train()
 
-    # Get word embeddings
-    word_embeddings = esn_word_prediction.get_word_embeddings()
+        # Get word embeddings
+        word_embeddings = esn_word_prediction.get_word_embeddings()
 
-    # Word embedding matrix's size
-    logger.info(u"Word embedding matrix's size : {}".format(word_embeddings.shape))
+        # Word embedding matrix's size
+        logger.info(u"Word embedding matrix's size : {}".format(word_embeddings.shape))
 
-    # Reduce with t-SNE
-    model = TSNE(n_components=2, random_state=0)
-    reduced_matrix = model.fit_transform(word_embeddings.T)
+        # Reduce with t-SNE
+        model = TSNE(n_components=2, random_state=0)
+        reduced_matrix = model.fit_transform(word_embeddings.T)
 
-    # Word embedding matrix's size
-    logger.info(u"Reduced matrix's size : {}".format(reduced_matrix.shape))
+        # Word embedding matrix's size
+        logger.info(u"Reduced matrix's size : {}".format(reduced_matrix.shape))
 
-    # Show t-SNE
-    plt.figure(figsize=(40, 40), dpi=300)
-    max_x = np.amax(reduced_matrix, axis=0)[0]
-    max_y = np.amax(reduced_matrix, axis=0)[1]
-    min_x = np.amin(reduced_matrix, axis=0)[0]
-    min_y = np.amin(reduced_matrix, axis=0)[1]
-    plt.xlim((min_x * 1.2, max_x * 1.2))
-    plt.ylim((min_y * 1.2, max_y * 1.2))
-    for word_index in np.arange(wp_vocabulary_size):
-        if word2vec.get_word_by_index(word_index) is not None:
-            plt.scatter(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], 0.5)
-            plt.text(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], word2vec.get_word_by_index(word_index),
-                     fontsize=2.5)
-            """plt.annotate(word2vec.get_word_by_index(word_index),
-                         (reduced_matrix[word_index, 0], reduced_matrix[word_index, 1]),
-                         arrowprops=dict(facecolor='red', shrink=0.025))"""
-        # end if
-    # end for
+        # Show t-SNE
+        plt.figure(figsize=(15, 15), dpi=300)
+        max_x = np.amax(reduced_matrix, axis=0)[0]
+        max_y = np.amax(reduced_matrix, axis=0)[1]
+        min_x = np.amin(reduced_matrix, axis=0)[0]
+        min_y = np.amin(reduced_matrix, axis=0)[1]
+        plt.xlim((min_x * 1.2, max_x * 1.2))
+        plt.ylim((min_y * 1.2, max_y * 1.2))
+        for word_index in np.arange(args.voc_size):
+            if word2vec.get_word_by_index(word_index) is not None:
+                word_text = word2vec.get_word_by_index(word_index)
+                if word2vec.get_word_count(word_text) >= 50:
+                    plt.scatter(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], 0.5)
+                    plt.text(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], word_text, fontsize=2.5)
+                    """plt.annotate(word2vec.get_word_by_index(word_index),
+                                 (reduced_matrix[word_index, 0], reduced_matrix[word_index, 1]),
+                                 arrowprops=dict(facecolor='red', shrink=0.025))"""
+                # end if
+            # end if
+        # end for
 
-    # Save image
-    plt.savefig(args.output)
+        # Save image
+        plt.savefig(args.output)
+
+        # Reset word prediction
+        esn_word_prediction.reset()
+    # end if
 
 # end if
