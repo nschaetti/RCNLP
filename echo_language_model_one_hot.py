@@ -93,6 +93,11 @@ if __name__ == "__main__":
 
     # For each loop
     for loop in range(args.loop):
+        # Change W_in
+        if loop != 0:
+            esn_word_prediction.set_w_in(word_embeddings)
+        # end if
+
         # Add text examples
         for index, file in enumerate(os.listdir(args.dataset)):
             if args.size != -1 and index >= args.size:
@@ -143,7 +148,7 @@ if __name__ == "__main__":
         # end for
 
         # Save image
-        plt.savefig(args.output)
+        plt.savefig(args.output + str(loop) + ".png")
 
         # Reset word prediction
         esn_word_prediction.reset()
