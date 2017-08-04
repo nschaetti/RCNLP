@@ -33,7 +33,7 @@ class EchoWordPrediction(object):
 
     # Constructor
     def __init__(self, word2vec, size, leaky_rate, spectral_radius, input_scaling=0.25, input_sparsity=0.1,
-                 w_sparsity=0.1, w=None, use_sparse_matrix=False):
+                 w_sparsity=0.1, w_in=None, w=None, use_sparse_matrix=False):
         """
         Constructor
         :param word2vec:
@@ -64,7 +64,7 @@ class EchoWordPrediction(object):
                                                         input_scaling=input_scaling,
                                                         leak_rate=leaky_rate, spectral_radius=spectral_radius,
                                                         sparsity=input_sparsity, w_sparsity=w_sparsity,
-                                                        use_sparse_matrix=use_sparse_matrix)
+                                                        w_in=w_in, use_sparse_matrix=use_sparse_matrix)
 
         # Reset state at each call
         self._reservoir.reset_states = True
@@ -75,6 +75,16 @@ class EchoWordPrediction(object):
         # Flow
         self._flow = mdp.Flow([self._reservoir, self._readout], verbose=1)
     # end __init__
+
+    # Change W_in
+    def set_w_in(self, w_in):
+        """
+        Change W_in
+        :param w_in:
+        :return:
+        """
+        self._reservoir.w_in = w_in
+    # end set_w_in
 
     # Add text example
     def add(self, text):
