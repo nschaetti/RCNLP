@@ -36,15 +36,16 @@ class OneHotConverter(Converter):
     """
 
     # Constructor
-    def __init__(self, lang='en', tag_to_symbol=None, resize=-1, pca_model=None, fill_in=False):
+    def __init__(self, lang='en', voc_size=5000):
         """
         Constructor
         :param lang: Language model
         :param tag_to_symbol: Tag to symbol conversion array.
         :param resize: Reduce dimensionality.
         """
-        super(OneHotConverter, self).__init__(lang, tag_to_symbol, resize, pca_model)
+        super(OneHotConverter, self).__init__(lang, None, -1, None)
         self._word2vec = None
+        self._voc_size = voc_size
     # end __init__
 
     ##############################################
@@ -73,7 +74,7 @@ class OneHotConverter(Converter):
         # end if
 
         # Word2Vec
-        self._word2vec = Word2Vec(dim=5000, mapper='one-hot')
+        self._word2vec = Word2Vec(dim=self._voc_size, mapper='one-hot')
 
         # Resulting numpy array
         doc_array = np.array([])

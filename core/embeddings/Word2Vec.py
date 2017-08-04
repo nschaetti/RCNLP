@@ -151,7 +151,11 @@ class Word2Vec(object):
         :param index: Index
         :return:
         """
-        return self._index_word[index]
+        if index < len(self._index_word):
+            return self._index_word[index]
+        else:
+            return None
+        # end if
     # end get_word_by_index
 
     # Get word count
