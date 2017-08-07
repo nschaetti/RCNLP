@@ -23,15 +23,14 @@
 #
 
 # Import packages
-import io
 import numpy as np
 import Oger
 import mdp
 from datetime import datetime
 from sys import getsizeof
-from core.converters.Converter import Converter
 from .TextClassifier import TextClassifier
 import matplotlib.pyplot as plt
+from decimal import *
 
 
 # Echo Word classifier model
@@ -45,7 +44,7 @@ class EchoWordClassifier(TextClassifier):
 
     # Constructor
     def __init__(self, classes, size, leak_rate, input_scaling, w_sparsity, input_sparsity, spectral_radius, converter,
-                 w=None):
+                 w=None, aggregation='average'):
         """
         Constructor
         :param classes: Set of possible classes
@@ -57,6 +56,7 @@ class EchoWordClassifier(TextClassifier):
         :param spectral_radius: Hidden layer matrix's spectral radius
         :param converter: Word to input converter
         :param w: Hidden layer matrix
+        :param aggregation: Aggregation function (average, multiplication)
         """
         # Super
         super(EchoWordClassifier, self).__init__(classes=classes)
@@ -72,6 +72,7 @@ class EchoWordClassifier(TextClassifier):
         self._converter = converter
         self._examples = dict()
         self._last_y = []
+        self._aggregation = aggregation
 
         # Create the reservoir
         self._reservoir = Oger.nodes.LeakyReservoirNode(input_dim=self._input_dim, output_dim=self._output_dim,
@@ -205,7 +206,32 @@ class EchoWordClassifier(TextClassifier):
         self._last_y = y
 
         # Get maximum probability class
-        return np.argmax(np.average(y, 0)), np.average(y, 0)
+        if self._aggregation == 'average':
+            return np.argmax(np.average(y, 0)), np.average(y, 0)
+        else:
+            # Decimal score
+            scores = list()
+            for i in range(self._n_classes):
+                scores[i] = Decimal(1.0)
+            # end for
+
+            # For each outputs
+            for pos in range(y.shape[0]):
+                for i in range(self._n_classes):
+                    scores[i] = scores[i] * Decimal(y[pos, i])
+                # end for
+            # end for
+
+            # Return the max
+            max = 0.0
+            for i in range(self._n_classes):
+                if scores[i] > max:
+                    max_c = i
+                    max = scores[i]
+                # end if
+            # end for
+            return max_c, scores
+        # end if
     # end _classify
 
     # Reset learning but keep reservoir
@@ -236,8 +262,11 @@ class EchoWordClassifier(TextClassifier):
         # Get Temporal Representations
         reps = self._converter(text)
 
+        # Converter type
+        converter_type = type(self._converter)
+
         # Generate x and y
-        return Converter.generate_data_set_inputs(reps, self._n_classes, author)
+        return converter_type.generate_data_set_inputs(reps, self._n_classes, author)
     # end generate_training_data
 
     # Generate text data from text file

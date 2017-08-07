@@ -44,13 +44,22 @@ class OneHotConverter(Converter):
         :param resize: Reduce dimensionality.
         """
         super(OneHotConverter, self).__init__(lang, None, -1, None)
-        self._word2vec = None
         self._voc_size = voc_size
+        self._word2vec = Word2Vec(dim=self._voc_size, mapper='one-hot')
     # end __init__
 
     ##############################################
     # Public
     ##############################################
+
+    # Get word2vec
+    def get_word2vec(self):
+        """
+        Get word2vec
+        :return:
+        """
+        return self._word2vec
+    # end get_word2vec
 
     ##############################################
     # Override
@@ -72,9 +81,6 @@ class OneHotConverter(Converter):
         else:
             doc = nlp(text)
         # end if
-
-        # Word2Vec
-        self._word2vec = Word2Vec(dim=self._voc_size, mapper='one-hot')
 
         # Resulting numpy array
         doc_array = np.array([])
@@ -116,5 +122,29 @@ class OneHotConverter(Converter):
         """
         return self._voc_size
     # end get_n_inputs
+
+    ##############################################
+    # Static
+    ##############################################
+
+    # Generate data set inputs
+    @staticmethod
+    def generate_data_set_inputs(reps, n_authors, author):
+        """
+        Generate data set inputs
+        :param reps:
+        :param n_authors:
+        :param author:
+        :return:
+        """
+        # Number of representations
+        n_reps = reps.shape[0]
+
+        # Author vector
+        outputs = sp.csr_matrix((n_reps, n_authors))
+        outputs[:, author] = 1.0
+
+        return reps, outputs
+    # end generate_data_set_inputs
 
 # end RCNLPConverter

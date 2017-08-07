@@ -302,20 +302,25 @@ class Word2Vec(object):
 
         # For each word
         for word in doc:
-            if word.text != u"\n" and word.text != u"\t" and word.text != u" ":
+            word_text = word.text
+            word_text = word_text.replace(u"\n", u"")
+            word_text = word_text.replace(u"\t", u"")
+            word_text = word_text.replace(u"\r", u"")
+            word_text = word_text.replace(u" ", u"")
+            if len(word_text) > 0:
                 self._total_counter += 1
                 try:
-                    self._word_counter[word.text] += 1
+                    self._word_counter[word_text] += 1
                 except KeyError:
-                    self._word_counter[word.text] = 0
+                    self._word_counter[word_text] = 0
                 # end try
                 if doc_array.size == 0:
-                    doc_array = self[word.text]
+                    doc_array = self[word_text]
                 else:
                     if self._mapper == "one-hot":
-                        doc_array = sp.vstack(blocks=[doc_array, self[word.text]])
+                        doc_array = sp.vstack(blocks=[doc_array, self[word_text]])
                     else:
-                        doc_array = np.vstack((doc_array, self[word.text]))
+                        doc_array = np.vstack((doc_array, self[word_text]))
                     # end if
                 # end if
             # end if
