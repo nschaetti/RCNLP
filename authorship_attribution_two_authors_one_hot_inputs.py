@@ -147,7 +147,7 @@ if __name__ == "__main__":
         # end for
 
         # Classify
-        pred, _ = classifier(test_set[0])
+        pred, _ = classifier(test_set[0][0])
         classifier.debug()
         exit()
 
