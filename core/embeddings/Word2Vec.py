@@ -4,6 +4,7 @@ import numpy as np
 import spacy
 from numpy import linalg as LA
 import scipy.sparse as sp
+from scipy.spatial.distance import euclidean
 
 ###########################################################
 # Exceptions
@@ -53,6 +54,8 @@ class Word2Vec(object):
         self._word_index = dict()
         self._index_word = dict()
         self._word_counter = dict()
+        self._total_counter = 0
+        self._word_embeddings = np.array([])
     # end __init__
 
     ###########################################
@@ -182,6 +185,76 @@ class Word2Vec(object):
         # end try
     # end get_word_count
 
+    # Reset word count
+    def reset_word_count(self):
+        """
+        Reset word count
+        :return:
+        """
+        self._word_counter = dict()
+        self._total_counter = 0
+    # end if
+
+    # Get total word count
+    def get_total_count(self):
+        """
+        Get total word count
+        :return:
+        """
+        return self._total_counter
+    # end get_total_count
+
+    # Get word similarities
+    def get_similarity(self, word1, word2):
+        """
+        Get word similarities
+        :param word1:
+        :param word2:
+        :return:
+        """
+        word1 = word1.lower()
+        word2 = word2.lower()
+        if word1 not in self._voc.keys() or word2 not in self._voc.keys():
+            return 0
+        else:
+            word1_index = self._word_index[word1]
+            word2_index = self._word_index[word2]
+            return euclidean(self._word_embeddings[:, word1_index], self._word_embeddings[:, word2_index])
+        # end if
+    # end get_similartiy
+
+    # Get similar words
+    def get_similar_words(self, word1, limit=10):
+        """
+        Get similar words
+        :param word1:
+        :param limit:
+        :return:
+        """
+        word1 = word1.lower()
+        similarities = list()
+        for word2 in self._voc.keys():
+            if word1 != word2:
+                similarities.append((word2, self.get_similarity(word1, word2)))
+            # end if
+        # end for
+
+        # Sort
+        similarities.sort(key=lambda tup: tup[1])
+
+        return similarities[:limit]
+    # end get_similar_word
+
+    # Set word embeddings
+    def set_word_embeddings(self, word_embeddings):
+        """
+        Set word embeddings
+        :param word_embeddings:
+        :return:
+        """
+        self._word_embeddings = word_embeddings
+    # end set_word_embeddings
+
     ###########################################
     # Override
     ###########################################
@@ -229,18 +302,21 @@ class Word2Vec(object):
 
         # For each word
         for word in doc:
-            try:
-                self._word_counter[word.text] += 1
-            except KeyError:
-                self._word_counter[word.text] = 0
-            # end try
-            if doc_array.size == 0:
-                doc_array = self[word.text]
-            else:
-                if self._mapper == "one-hot":
-                    doc_array = sp.vstack(blocks=[doc_array, self[word.text]])
+            if word.text != u"\n" and word.text != u"\t" and word.text != u" ":
+                self._total_counter += 1
+                try:
+                    self._word_counter[word.text] += 1
+                except KeyError:
+                    self._word_counter[word.text] = 0
+                # end try
+                if doc_array.size == 0:
+                    doc_array = self[word.text]
                 else:
-                    doc_array = np.vstack((doc_array, self[word.text]))
+                    if self._mapper == "one-hot":
+                        doc_array = sp.vstack(blocks=[doc_array, self[word.text]])
+                    else:
+                        doc_array = np.vstack((doc_array, self[word.text]))
+                    # end if
                 # end if
             # end if
         # end for

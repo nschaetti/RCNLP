@@ -29,13 +29,7 @@ class WordPredictionDataset(object):
         :param text: The text example
         """
         input_vectors = sp.vstack((sp.csr_matrix(np.zeros(self._word2vec.get_dimension())), self._word2vec(text)))
-        #input_vectors2 = np.vstack((np.zeros(self._word2vec.get_dimension()), self._word2vec(text)))
         output_vectors = sp.vstack((self._word2vec(text), sp.csr_matrix(np.zeros(self._word2vec.get_dimension()))))
-        #output_vectors2 = np.vstack((self._word2vec(text), np.zeros(self._word2vec.get_dimension())))
-        #print(input_vectors.shape)
-        #print(input_vectors2.shape)
-        #print(output_vectors.shape)
-        #print(output_vectors2.shape)
         self._X.append(input_vectors)
         self._Y.append(output_vectors)
     # end add
