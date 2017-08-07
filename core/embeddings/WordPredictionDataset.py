@@ -12,12 +12,14 @@ class WordPredictionDataset(object):
     """
 
     # Constructor
-    def __init__(self, word2vec):
+    def __init__(self, word2vec, task_type='predict'):
         """
         Constructor
         :param word2vec: Word to vec converter
+        :param task_type: Task type (predict, remember, predict_and_remember)
         """
         self._word2vec = word2vec
+        self._task_type = task_type
         self._X = list()
         self._Y = list()
     # end __init__
@@ -28,8 +30,31 @@ class WordPredictionDataset(object):
         Add an example
         :param text: The text example
         """
-        input_vectors = sp.vstack((sp.csr_matrix(np.zeros(self._word2vec.get_dimension())), self._word2vec(text)))
-        output_vectors = sp.vstack((self._word2vec(text), sp.csr_matrix(np.zeros(self._word2vec.get_dimension()))))
+        # Current word vector
+        word_vectors = self._word2vec(text)
+
+        # Zero vector
+        zero_vector = sp.csr_matrix(np.zeros(self._word2vec.get_dimension()))
+
+        # Add to dataset
+        if self._task_type == 'predict':
+            input_vectors = sp.vstack((zero_vector, word_vectors))
+            output_vectors = sp.vstack((word_vectors, zero_vector))
+        elif self._task_type == 'remember':
+            input_vectors = sp.vstack((word_vectors, zero_vector))
+            output_vectors = sp.vstack((zero_vector, word_vectors))
+        else:
+            # Inputs
+            input_vectors = sp.vstack((zero_vector, word_vectors, zero_vector))
+            # Remember
+            remember_vectors = sp.vstack((zero_vector, zero_vector, word_vectors))
+            # Predict
+            predict_vectors = sp.vstack((word_vectors, zero_vector, zero_vector))
+            # Output
+            output_vectors = sp.hstack((remember_vectors, predict_vectors))
+        # end if
+
+        # Add to dataset
         self._X.append(input_vectors)
         self._Y.append(output_vectors)
     # end add

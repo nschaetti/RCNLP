@@ -33,7 +33,7 @@ class EchoWordPrediction(object):
 
     # Constructor
     def __init__(self, word2vec, size, leaky_rate, spectral_radius, input_scaling=0.25, input_sparsity=0.1,
-                 w_sparsity=0.1, w_in=None, w=None, use_sparse_matrix=False):
+                 w_sparsity=0.1, w_in=None, w=None, use_sparse_matrix=False, task_type='predict'):
         """
         Constructor
         :param word2vec:
@@ -44,6 +44,7 @@ class EchoWordPrediction(object):
         :param input_sparsity:
         :param w_sparsity:
         :param w:
+        :param task_type:
         """
         # Properties
         self._word2vec = word2vec
@@ -51,16 +52,20 @@ class EchoWordPrediction(object):
         self._leaky_rate = leaky_rate
         self._spectral_radius = spectral_radius
         self._trained = False
+        self._task_type = task_type
 
         # Wordprediction dataset generator
-        self._dataset = WordPredictionDataset(word2vec=word2vec)
+        self._dataset = WordPredictionDataset(word2vec=word2vec, task_type=task_type)
 
-        # Sparse matrix
-        #use_sparse_matrix = True if word2vec.get_mapper() == "one-hot" else False
+        # Dimension
+        if self._task_type == 'predict' or self._task_type == 'remember':
+            input_dim = word2vec.get_dimension()
+        else:
+            input_dim = word2vec.get_dimension() * 2
+        # end if
 
         # Create the reservoir
-        self._reservoir = Oger.nodes.LeakyReservoirNode(input_dim=word2vec.get_dimension(),
-                                                        output_dim=self._size,
+        self._reservoir = Oger.nodes.LeakyReservoirNode(input_dim=input_dim, output_dim=self._size,
                                                         input_scaling=input_scaling,
                                                         leak_rate=leaky_rate, spectral_radius=spectral_radius,
                                                         sparsity=input_sparsity, w_sparsity=w_sparsity,
