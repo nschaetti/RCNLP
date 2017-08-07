@@ -29,7 +29,7 @@ import io
 from core.embeddings.Word2Vec import Word2Vec
 from core.embeddings.EchoWordPrediction import EchoWordPrediction
 from core.embeddings.WordPredictionDataset import WordPredictionDataset
-from numpy import linalg as LA
+from scipy.spatial.distance import euclidean
 from sklearn.manifold import TSNE
 import pylab as plt
 from sklearn.decomposition import PCA
@@ -72,6 +72,9 @@ if __name__ == "__main__":
     parser.add_argument("--log-level", type=int, help="Log level", default=20)
     parser.add_argument("--voc-size", type=int, help="Vocabulary size", default=5000, required=True)
     parser.add_argument("--loop", type=int, help="Number of loops", default=1)
+    parser.add_argument("--fig-size", type=float, help="Figure size (pixels)", default=1024.0)
+    parser.add_argument("--count-limit", type=int, help="Lower limit of word count to display a word", default=50)
+    parser.add_argument("--norm", action='store_true', help="Normalize word embeddings?", default=False)
     args = parser.parse_args()
 
     # Init logging
@@ -91,11 +94,16 @@ if __name__ == "__main__":
                                              input_sparsity=rc_input_sparsity, w_sparsity=rc_w_sparsity,
                                              use_sparse_matrix=args.sparse)
 
+    # Current word embeddings
+    word_embeddings = None
+    last_word_embeddings = None
+
     # For each loop
     for loop in range(args.loop):
         # Change W_in
-        if loop != 0:
-            esn_word_prediction.set_w_in(word_embeddings)
+        if word_embeddings is not None:
+            last_word_embeddings = word_embeddings
+            esn_word_prediction.set_w_in(word_embeddings[:-1, :])
         # end if
 
         # Add text examples
@@ -106,7 +114,8 @@ if __name__ == "__main__":
             file_path = os.path.join(args.dataset, file)
             logger.info(u"Adding text file {}/{} : {}".format(index+1, args.size, file_path))
             esn_word_prediction.add(io.open(file_path, 'r').read())
-            logger.info(u"{} total token in word2vec".format(word2vec.get_n_words()))
+            logger.info(u"{} tokens in vocabulary".format(word2vec.get_n_words()))
+            logger.info(u"{} tokens in dataset".format(word2vec.get_total_count()))
         # end for
 
         # Train
@@ -118,6 +127,36 @@ if __name__ == "__main__":
 
         # Word embedding matrix's size
         logger.info(u"Word embedding matrix's size : {}".format(word_embeddings.shape))
+        logger.info(u"Word embedding vectors average : {}".format(np.average(word_embeddings)))
+        logger.info(u"Word embedding vectors sddev : {}".format(np.std(word_embeddings)))
+
+        # Normalize word embeddings
+        if args.norm:
+            word_embeddings -= np.average(word_embeddings)
+            word_embeddings /= np.std(word_embeddings)
+            logger.info(u"Normalized word embedding vectors average : {}".format(np.average(word_embeddings)))
+            logger.info(u"Normalized word embedding vectors sddev : {}".format(np.std(word_embeddings)))
+        # end if
+
+        # Set word embeddings
+        word2vec.set_word_embeddings(word_embeddings=word_embeddings)
+
+        # Distance with preceding word embeddings
+        if last_word_embeddings is not None:
+            average_distance = 0.0
+            for i in range(args.voc_size):
+                average_distance += euclidean(word_embeddings[:, i], last_word_embeddings[:, i])
+            # end for
+            logger.info(u"Distance with preceding word embeddings : {}".format(average_distance / float(args.voc_size)))
+        # end if
+
+        # Similarities
+        logger.info(u"Words similar to he : {}".format(word2vec.get_similar_words(u"he")))
+        logger.info(u"Words similar to computer : {}".format(word2vec.get_similar_words(u"computer")))
+        logger.info(u"Words similar to million : {}".format(word2vec.get_similar_words(u"million")))
+        logger.info(u"Words similar to Toronto : {}".format(word2vec.get_similar_words(u"Toronto")))
+        logger.info(u"Words similar to France : {}".format(word2vec.get_similar_words(u"France")))
+        logger.info(u"Words similar to phone : {}".format(word2vec.get_similar_words(u"phone")))
 
         # Reduce with t-SNE
         model = TSNE(n_components=2, random_state=0)
@@ -127,7 +166,7 @@ if __name__ == "__main__":
         logger.info(u"Reduced matrix's size : {}".format(reduced_matrix.shape))
 
         # Show t-SNE
-        plt.figure(figsize=(15, 15), dpi=300)
+        plt.figure(figsize=(args.fig_size*0.003, args.fig_size*0.003), dpi=300)
         max_x = np.amax(reduced_matrix, axis=0)[0]
         max_y = np.amax(reduced_matrix, axis=0)[1]
         min_x = np.amin(reduced_matrix, axis=0)[0]
@@ -137,7 +176,7 @@ if __name__ == "__main__":
         for word_index in np.arange(args.voc_size):
             if word2vec.get_word_by_index(word_index) is not None:
                 word_text = word2vec.get_word_by_index(word_index)
-                if word2vec.get_word_count(word_text) >= 50:
+                if word2vec.get_word_count(word_text) >= args.count_limit:
                     plt.scatter(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], 0.5)
                     plt.text(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], word_text, fontsize=2.5)
                     """plt.annotate(word2vec.get_word_by_index(word_index),
@@ -151,6 +190,7 @@ if __name__ == "__main__":
         plt.savefig(args.output + str(loop) + ".png")
 
         # Reset word prediction
+        word2vec.reset_word_count()
         esn_word_prediction.reset()
     # end if
 
