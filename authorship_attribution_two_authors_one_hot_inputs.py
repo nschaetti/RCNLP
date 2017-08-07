@@ -37,6 +37,7 @@ from core.converters.OneHotConverter import OneHotConverter
 from core.classifiers.EchoWordClassifier import EchoWordClassifier
 from core.tools.RCNLPLogging import RCNLPLogging
 from core.tools.Metrics import Metrics
+import logging
 
 #########################################################################
 # Experience settings
@@ -74,41 +75,20 @@ if __name__ == "__main__":
     parser.add_argument("--author1", type=str, help="First author", default="1")
     parser.add_argument("--author2", type=str, help="Second author", default="2")
     parser.add_argument("--lang", type=str, help="Language (en_core_web_md, ar, en, es, pt)", default='en_core_web_md')
-    parser.add_argument("--converter", type=str, help="The text converter to use (fw, pos, tag, wv)", default='pos')
-    parser.add_argument("--pca-model", type=str, help="PCA model to load", default=None)
-    parser.add_argument("--in-components", type=int, help="Number of principal component to reduce inputs to",
-                        default=-1)
     parser.add_argument("--sentence", action='store_true', help="Test sentence classification rate?", default=False)
     parser.add_argument("--k", type=int, help="n-Fold Cross Validation", default=10)
-    parser.add_argument("--samples", type=int, help="Number of reservoir to sample", default=50)
     parser.add_argument("--verbose", action='store_true', help="Verbose mode", default=False)
     parser.add_argument("--debug", action='store_true', help="Debug mode", default=False)
+    parser.add_argument("--voc-size", type=int, help="Vocabulary size", default=5000, required=True)
+    parser.add_argument("--log-level", type=int, help="Log level", default=20)
     args = parser.parse_args()
 
-    # Logging
-    logging = RCNLPLogging(exp_name=ex_name, exp_inst=ex_instance,
-                           exp_value=RCNLPLogging.generate_experience_name(locals()))
-    logging.save_globals()
-    logging.save_variables(locals())
-
-    # PCA model
-    pca_model = None
-    if args.pca_model is not None:
-        pca_model = pickle.load(open(args.pca_model, 'r'))
-    # end if
+    # Init logging
+    logging.basicConfig(level=args.log_level)
+    logger = logging.getLogger(name="RCNLP")
 
     # Choose a text to symbol converter
-    if args.converter == "pos":
-        converter = PosConverter(lang=args.lang, resize=args.in_components, pca_model=pca_model)
-    elif args.converter == "tag":
-        converter = TagConverter(lang=args.lang, resize=args.in_components, pca_model=pca_model)
-    elif args.converter == "fw":
-        converter = FuncWordConverter(lang=args.lang, resize=args.in_components, pca_model=pca_model)
-    elif args.converter == "wv":
-        converter = WVConverter(lang=args.lang, resize=args.in_components, pca_model=pca_model)
-    elif args.converter == "oh":
-        converter = OneHotConverter(lang=args.lang, voc_size=10000)
-    # end if
+    converter = OneHotConverter(lang=args.lang, voc_size=args.voc_size)
 
     # Prepare training and test set indexes.
     n_fold_samples = int(100 / args.k)
@@ -173,13 +153,13 @@ if __name__ == "__main__":
 
         # Success rate
         success_rate = Metrics.success_rate(classifier, test_set, verbose=args.verbose, debug=args.debug)
-        print(u"\t{} - Success rate : {}".format(k, success_rate))
+        logger.info(u"\t{} - Success rate : {}".format(k, success_rate))
 
         # Save result
         success_rates[k] = success_rate
     # end for
 
     # Over all success rate
-    print(u"All - Success rate : {}".format(np.average(success_rates)))
+        logger.info(u"All - Success rate : {}".format(np.average(success_rates)))
 
 # end if
