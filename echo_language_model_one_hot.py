@@ -157,6 +157,7 @@ if __name__ == "__main__":
         logger.info(u"Words similar to Toronto : {}".format(word2vec.get_similar_words(u"Toronto")))
         logger.info(u"Words similar to France : {}".format(word2vec.get_similar_words(u"France")))
         logger.info(u"Words similar to phone : {}".format(word2vec.get_similar_words(u"phone")))
+        logger.info(u"Words similar to ask : {}".format(word2vec.get_similar_words(u"ask")))
 
         # Reduce with t-SNE
         model = TSNE(n_components=2, random_state=0)
