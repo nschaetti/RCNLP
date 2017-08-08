@@ -48,10 +48,10 @@ ex_name = "Authorship Attribution"
 ex_instance = "Two Authors One-hot representations"
 
 # Reservoir Properties
-rc_leak_rate = 0.5  # Leak rate
-rc_input_scaling = 0.5  # Input scaling
+rc_leak_rate = 0.01  # Leak rate
+rc_input_scaling = 1.0  # Input scaling
 rc_size = 500  # Reservoir size
-rc_spectral_radius = 0.1  # Spectral radius
+rc_spectral_radius = 0.9  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.01
 sl_smoothing_param = 0.5
@@ -147,8 +147,14 @@ if __name__ == "__main__":
         # end for
 
         # Classify
+        print(test_set[0][1])
         pred, _ = classifier(test_set[0][0])
         classifier.debug()
+
+        print(test_set[-1][1])
+        pred, _ = classifier(test_set[-1][0])
+        classifier.debug()
+
         exit()
 
         # Success rate
