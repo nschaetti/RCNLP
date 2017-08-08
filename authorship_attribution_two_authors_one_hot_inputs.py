@@ -54,7 +54,6 @@ rc_size = 500  # Reservoir size
 rc_spectral_radius = 0.9  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.01
-sl_smoothing_param = 0.5
 
 ####################################################
 # Functions
@@ -81,6 +80,7 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action='store_true', help="Debug mode", default=False)
     parser.add_argument("--voc-size", type=int, help="Vocabulary size", default=5000, required=True)
     parser.add_argument("--log-level", type=int, help="Log level", default=20)
+    parser.add_argument("--sparse", action='store_true', help="Sparse matrix?", default=False)
     args = parser.parse_args()
 
     # Init logging
@@ -99,7 +99,8 @@ if __name__ == "__main__":
     classifier = EchoWordClassifier(classes=[0, 1], size=rc_size, input_scaling=rc_input_scaling,
                                     leak_rate=rc_leak_rate,
                                     input_sparsity=rc_input_sparsity, converter=converter,
-                                    spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
+                                    spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity,
+                                    use_sparse_matrix=args.sparse)
 
     # Success rates
     success_rates = np.zeros(args.k)
@@ -146,17 +147,6 @@ if __name__ == "__main__":
             # end for
         # end for
 
-        # Classify
-        print(test_set[0][1])
-        pred, _ = classifier(test_set[0][0])
-        classifier.debug()
-
-        print(test_set[-1][1])
-        pred, _ = classifier(test_set[-1][0])
-        classifier.debug()
-
-        exit()
-
         # Success rate
         success_rate = Metrics.success_rate(classifier, test_set, verbose=args.verbose, debug=args.debug)
         logger.info(u"\t{} - Success rate : {}".format(k, success_rate))
@@ -166,6 +156,6 @@ if __name__ == "__main__":
     # end for
 
     # Over all success rate
-        logger.info(u"All - Success rate : {}".format(np.average(success_rates)))
+    logger.info(u"All - Success rate : {}".format(np.average(success_rates)))
 
 # end if

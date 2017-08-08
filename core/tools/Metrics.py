@@ -208,9 +208,11 @@ class Metrics:
             # end if
             if prediction == xy[1]:
                 success += 1.0
-            elif debug:
-                classifier.debug()
+            """elif debug:
+                classifier.debug()"""
             # end if
+            print(u"Author {}, prediction {}".format(xy[1], prediction))
+            classifier.debug()
             count += 1.0
         # end for
 

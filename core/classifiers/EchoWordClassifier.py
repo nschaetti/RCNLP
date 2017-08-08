@@ -44,7 +44,7 @@ class EchoWordClassifier(TextClassifier):
 
     # Constructor
     def __init__(self, classes, size, leak_rate, input_scaling, w_sparsity, input_sparsity, spectral_radius, converter,
-                 w=None, aggregation='average'):
+                 w=None, aggregation='average', use_sparse_matrix=False):
         """
         Constructor
         :param classes: Set of possible classes
@@ -73,12 +73,14 @@ class EchoWordClassifier(TextClassifier):
         self._examples = dict()
         self._last_y = []
         self._aggregation = aggregation
-
+        self._author_token_count = np.zeros(self._n_classes)
+        print(self._input_dim)
         # Create the reservoir
         self._reservoir = Oger.nodes.LeakyReservoirNode(input_dim=self._input_dim, output_dim=self._output_dim,
                                                         input_scaling=input_scaling,
                                                         leak_rate=leak_rate, spectral_radius=spectral_radius,
-                                                        sparsity=input_sparsity, w_sparsity=w_sparsity, w=w)
+                                                        sparsity=input_sparsity, w_sparsity=w_sparsity, w=w,
+                                                        use_sparse_matrix=use_sparse_matrix)
 
         # Reset state at each call
         self._reservoir.reset_states = True
@@ -161,13 +163,20 @@ class EchoWordClassifier(TextClassifier):
 
         # For each training text file
         for index, text in enumerate(self._examples.keys()):
+            author_index = self._examples[text]
             if verbose:
                 print(u"Training on {}/{}...".format(index, len(self._examples.keys())))
             # end if
             x, y = self._generate_training_data(text, self._examples[text])
             X.append(x)
             Y.append(y)
+            self._author_token_count[author_index] += x.shape[0]
+            print(self._converter.get_word2vec().get_n_words())
+            print(u"Author {} has {} tokens".format(author_index, self._author_token_count[author_index]))
         # end for
+        for i in range(self._n_classes):
+            print(u"Author {} has {} tokens".format(i, self._author_token_count[i]))
+        # end if
 
         # Create data
         data = [None, zip(X, Y)]
@@ -201,7 +210,7 @@ class EchoWordClassifier(TextClassifier):
         y = self._flow(x)
         y -= np.min(y)
         y /= np.max(y)
-
+        print(y)
         # Save last y
         self._last_y = y
 
