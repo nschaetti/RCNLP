@@ -107,12 +107,20 @@ if __name__ == "__main__":
     # Success rates
     success_rates = np.zeros(n_books)
 
+    # Find negative books
+    negative_books = list()
+    for i in range(n_books):
+        random_author = np.random.choice(other_authors, size=1)[0]
+        random_book = np.random.choice(authors_data[random_author], size=1)[0]
+        negative_books.append(random_book)
+    # end for
+
     # k-Fold cross validation
     for k in range(0, n_books):
         # Prepare training and test set.
-        test_set_indexes = list(author_books[k])
-        training_set_indexes = author_books
-        training_set_indexes.pop(k)
+        test_set_indexes = [k]
+        training_set_indexes = range(n_books)
+        training_set_indexes.remove(k)
 
         # Add examples
         for author_index, author_id in enumerate((args.author1, args.author2)):
@@ -147,17 +155,6 @@ if __name__ == "__main__":
                 # end if
             # end for
         # end for
-
-        # Classify
-        print(test_set[0][1])
-        pred, _ = classifier(test_set[0][0])
-        classifier.debug()
-
-        print(test_set[-1][1])
-        pred, _ = classifier(test_set[-1][0])
-        classifier.debug()
-
-        exit()
 
         # Success rate
         success_rate = Metrics.success_rate(classifier, test_set, verbose=args.verbose, debug=args.debug)
