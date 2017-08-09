@@ -51,10 +51,10 @@ ex_instance = "Two Authors One-hot representations"
 # Reservoir Properties
 rc_leak_rate = 0.5  # Leak rate
 rc_input_scaling = 1.0  # Input scaling
-rc_size = 4000  # Reservoir size
+rc_size = 8000  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
-rc_input_sparsity = 0.01
+rc_input_sparsity = 0.005
 
 ####################################################
 # Functions
