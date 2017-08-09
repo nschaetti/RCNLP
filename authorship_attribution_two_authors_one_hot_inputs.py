@@ -38,6 +38,7 @@ from core.classifiers.EchoWordClassifier import EchoWordClassifier
 from core.tools.RCNLPLogging import RCNLPLogging
 from core.tools.Metrics import Metrics
 import logging
+from core.embeddings.Word2Vec import Word2Vec
 
 #########################################################################
 # Experience settings
@@ -81,26 +82,37 @@ if __name__ == "__main__":
     parser.add_argument("--voc-size", type=int, help="Vocabulary size", default=5000, required=True)
     parser.add_argument("--log-level", type=int, help="Log level", default=20)
     parser.add_argument("--sparse", action='store_true', help="Sparse matrix?", default=False)
+    parser.add_argument("--multi", action='store_true', help="Probabilities computer by multiplication not average", default=False)
     args = parser.parse_args()
 
     # Init logging
     logging.basicConfig(level=args.log_level)
     logger = logging.getLogger(name="RCNLP")
 
+    # Word2Vec
+    word2vec = Word2Vec(dim=args.voc_size, mapper='one-hot')
+
     # Choose a text to symbol converter
-    converter = OneHotConverter(lang=args.lang, voc_size=args.voc_size)
+    converter = OneHotConverter(lang=args.lang, voc_size=args.voc_size, word2vec=word2vec)
 
     # Prepare training and test set indexes.
     n_fold_samples = int(100 / args.k)
     indexes = np.arange(0, 100, 1)
     indexes.shape = (args.k, n_fold_samples)
 
+    # Aggregation
+    if args.multi:
+        aggregation = 'multiplication'
+    else:
+        aggregation = 'average'
+    # end if
+
     # Create Echo Word Classifier
     classifier = EchoWordClassifier(classes=[0, 1], size=rc_size, input_scaling=rc_input_scaling,
                                     leak_rate=rc_leak_rate,
                                     input_sparsity=rc_input_sparsity, converter=converter,
                                     spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity,
-                                    use_sparse_matrix=args.sparse)
+                                    use_sparse_matrix=args.sparse, aggregation=aggregation)
 
     # Success rates
     success_rates = np.zeros(args.k)

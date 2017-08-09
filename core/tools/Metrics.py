@@ -23,6 +23,7 @@
 
 # Import package
 import math
+import logging
 
 
 class Metrics:
@@ -208,11 +209,14 @@ class Metrics:
             # end if
             if prediction == xy[1]:
                 success += 1.0
-            """elif debug:
-                classifier.debug()"""
+            elif debug:
+                classifier.debug()
             # end if
-            print(u"Author {}, prediction {}".format(xy[1], prediction))
-            classifier.debug()
+
+            # Debug
+            logging.getLogger("RCNLP").debug(u"Author {}, prediction {}".format(xy[1], prediction))
+
+            # Count
             count += 1.0
         # end for
 

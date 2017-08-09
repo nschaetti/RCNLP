@@ -31,6 +31,7 @@ from sys import getsizeof
 from .TextClassifier import TextClassifier
 import matplotlib.pyplot as plt
 from decimal import *
+import logging
 
 
 # Echo Word classifier model
@@ -44,7 +45,7 @@ class EchoWordClassifier(TextClassifier):
 
     # Constructor
     def __init__(self, classes, size, leak_rate, input_scaling, w_sparsity, input_sparsity, spectral_radius, converter,
-                 w=None, aggregation='average', use_sparse_matrix=False):
+                 w=None, aggregation='average', use_sparse_matrix=False, smoothing=0.01):
         """
         Constructor
         :param classes: Set of possible classes
@@ -74,7 +75,8 @@ class EchoWordClassifier(TextClassifier):
         self._last_y = []
         self._aggregation = aggregation
         self._author_token_count = np.zeros(self._n_classes)
-        print(self._input_dim)
+        self._smoothing = smoothing
+
         # Create the reservoir
         self._reservoir = Oger.nodes.LeakyReservoirNode(input_dim=self._input_dim, output_dim=self._output_dim,
                                                         input_scaling=input_scaling,
@@ -90,6 +92,9 @@ class EchoWordClassifier(TextClassifier):
 
         # Flow
         self._flow = mdp.Flow([self._reservoir, self._readout], verbose=0)
+
+        # Logger
+        self._logger = logging.getLogger(name="RCNLP")
     # end __init__
 
     ##############################################
@@ -165,26 +170,25 @@ class EchoWordClassifier(TextClassifier):
         for index, text in enumerate(self._examples.keys()):
             author_index = self._examples[text]
             if verbose:
-                print(u"Training on {}/{}...".format(index, len(self._examples.keys())))
+                self._logger.debug(u"Training on {}/{}...".format(index, len(self._examples.keys())))
             # end if
             x, y = self._generate_training_data(text, self._examples[text])
             X.append(x)
             Y.append(y)
             self._author_token_count[author_index] += x.shape[0]
-            print(self._converter.get_word2vec().get_n_words())
-            print(u"Author {} has {} tokens".format(author_index, self._author_token_count[author_index]))
+            #self._logger.debug(u"Author {} has {} tokens".format(author_index, self._author_token_count[author_index]))
         # end for
-        for i in range(self._n_classes):
-            print(u"Author {} has {} tokens".format(i, self._author_token_count[i]))
-        # end if
+        """for i in range(self._n_classes):
+            self._logger.debug(u"Author {} has {} tokens".format(i, self._author_token_count[i]))
+        # end if"""
 
         # Create data
         data = [None, zip(X, Y)]
 
         # Pre-log
         if verbose:
-            print(u"Training model...")
-            print(datetime.now().strftime("%H:%M:%S"))
+            self._logger.debug(u"Training model...")
+            self._logger.debug(datetime.now().strftime("%H:%M:%S"))
         # end if
 
         # Train the model
@@ -192,7 +196,7 @@ class EchoWordClassifier(TextClassifier):
 
         # Post-log
         if verbose:
-            print(datetime.now().strftime("%H:%M:%S"))
+            self._logger.debug(datetime.now().strftime("%H:%M:%S"))
         # end if
     # end _finalize_training
 
@@ -210,7 +214,7 @@ class EchoWordClassifier(TextClassifier):
         y = self._flow(x)
         y -= np.min(y)
         y /= np.max(y)
-        print(y)
+
         # Save last y
         self._last_y = y
 
@@ -221,13 +225,17 @@ class EchoWordClassifier(TextClassifier):
             # Decimal score
             scores = list()
             for i in range(self._n_classes):
-                scores[i] = Decimal(1.0)
+                scores.append(Decimal(1.0))
             # end for
 
             # For each outputs
             for pos in range(y.shape[0]):
                 for i in range(self._n_classes):
-                    scores[i] = scores[i] * Decimal(y[pos, i])
+                    if y[pos, i] == 0.0:
+                        scores[i] = scores[i] * Decimal(self._smoothing)
+                    else:
+                        scores[i] = scores[i] * Decimal(y[pos, i])
+                    # end if
                 # end for
             # end for
 

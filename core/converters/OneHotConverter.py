@@ -36,7 +36,7 @@ class OneHotConverter(Converter):
     """
 
     # Constructor
-    def __init__(self, lang='en', voc_size=5000):
+    def __init__(self, word2vec, lang='en', voc_size=5000):
         """
         Constructor
         :param lang: Language model
@@ -45,7 +45,8 @@ class OneHotConverter(Converter):
         """
         super(OneHotConverter, self).__init__(lang, None, -1, None)
         self._voc_size = voc_size
-        self._word2vec = Word2Vec(dim=self._voc_size, mapper='one-hot')
+        self._word2vec = word2vec
+        #self._word2vec = Word2Vec(dim=self._voc_size, mapper='one-hot')
     # end __init__
 
     ##############################################
