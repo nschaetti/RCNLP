@@ -138,6 +138,15 @@ class EchoWordClassifier(TextClassifier):
         return self._last_y
     # end _get_debugging_data
 
+    # Get embeddings
+    def get_embeddings(self):
+        """
+        Get embeddings
+        :return: Embedding matrix
+        """
+        return self._readout.beta
+    # end get_embeddings
+
     ##############################################
     # Override
     ##############################################

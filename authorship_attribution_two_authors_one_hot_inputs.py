@@ -51,7 +51,7 @@ ex_instance = "Two Authors One-hot representations"
 # Reservoir Properties
 rc_leak_rate = 0.5  # Leak rate
 rc_input_scaling = 1.0  # Input scaling
-rc_size = 500  # Reservoir size
+rc_size = 4000  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.01
@@ -136,6 +136,9 @@ if __name__ == "__main__":
 
         # Finalize model training
         classifier.finalize(verbose=args.verbose)
+
+        # Display embeddings
+        print(classifier.get_embeddings())
 
         # Init test epoch
         test_set = list()
