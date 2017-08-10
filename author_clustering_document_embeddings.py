@@ -44,12 +44,12 @@ ex_name = "Authorship Attribution"
 ex_instance = "Two Authors One-hot representations"
 
 # Reservoir Properties
-rc_leak_rate = 0.5  # Leak rate
+rc_leak_rate = 1.0  # Leak rate
 rc_input_scaling = 1.0  # Input scaling
-rc_size = 2000  # Reservoir size
+rc_size = 50  # Reservoir size
 rc_spectral_radius = 0.99  # Spectral radius
 rc_w_sparsity = 0.1
-rc_input_sparsity = 0.005
+rc_input_sparsity = 0.01
 
 ####################################################
 # Functions
@@ -83,11 +83,11 @@ if __name__ == "__main__":
 
     # Argument
     parser.add_argument("--dataset", type=str, help="Dataset's directory")
+    parser.add_argument("--output", type=str, help="Output image", required=True)
     parser.add_argument("--n-authors", type=int, help="Number of authors", default=10)
     parser.add_argument("--n-documents", type=int, help="Number of documents per authors", default=10)
     parser.add_argument("--lang", type=str, help="Language (en_core_web_md, ar, en, es, pt)", default='en_core_web_md')
     parser.add_argument("--verbose", action='store_true', help="Verbose mode", default=False)
-    parser.add_argument("--debug", action='store_true', help="Debug mode", default=False)
     parser.add_argument("--voc-size", type=int, help="Vocabulary size", default=5000, required=True)
     parser.add_argument("--log-level", type=int, help="Log level", default=20)
     parser.add_argument("--sparse", action='store_true', help="Sparse matrix?", default=False)
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # Add examples
     document_index = 0
     for author_id in np.arange(1, args.n_authors+1):
-        author_path = os.path.join(args.dataset, "total", author_id)
+        author_path = os.path.join(args.dataset, "total", str(author_id))
         for file_index in range(args.n_documents):
             file_path = os.path.join(author_path, str(file_index) + ".txt")
             logger.info(u"Adding document {} as {}".format(file_path, document_index))
@@ -135,8 +135,8 @@ if __name__ == "__main__":
 
     # Display similar doc for the first document of each author
     for document_index in np.arange(0, n_total_docs, args.n_authors):
-        logger.info(u"Documents similar to {} : {}".format(document_index,
-                                                           get_similar_documents(document_index, document_embeddings)))
+        similar_doc = get_similar_documents(document_index, document_embeddings)
+        logger.info(u"Documents similar to {} : {}".format(document_index, similar_doc[:10]))
     # end for
 
     # Reduce with t-SNE
@@ -157,7 +157,10 @@ if __name__ == "__main__":
     for document_index in range(n_total_docs):
         author_index = int(float(document_index) / float(args.n_authors))
         plt.scatter(reduced_matrix[document_index, 0], reduced_matrix[document_index, 1], 0.5)
-        plt.text(reduced_matrix[document_index, 0], reduced_matrix[document_index, 1], str(author_index), fontsize=2.5)
+        plt.text(reduced_matrix[document_index, 0], reduced_matrix[document_index, 1], str(document_index) + ", " + str(author_index), fontsize=2.5)
     # end for
+
+    # Save image
+    plt.savefig(args.output)
 
 # end if
