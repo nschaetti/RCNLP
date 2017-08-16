@@ -34,6 +34,7 @@ from sklearn.manifold import TSNE
 import pylab as plt
 from sklearn.decomposition import PCA
 import logging
+import pickle
 
 #########################################################################
 # Experience settings
@@ -46,7 +47,7 @@ ex_instance = "Echo Language Model One Hot"
 # Reservoir Properties
 rc_leak_rate = 0.5  # Leak rate
 rc_input_scaling = 1.0  # Input scaling
-rc_size = 300  # Reservoir size
+rc_size = 500  # Reservoir size
 rc_spectral_radius = 0.9  # Spectral radius
 rc_w_sparsity = 0.1
 rc_input_sparsity = 0.01
@@ -66,7 +67,7 @@ if __name__ == "__main__":
 
     # Argument
     parser.add_argument("--dataset", type=str, help="Dataset's directory", required=True)
-    parser.add_argument("--output", type=str, help="Output image", required=True)
+    parser.add_argument("--image", type=str, help="Output image", required=True)
     parser.add_argument("--size", type=int, help="How many file to take in the dataset", default=-1)
     parser.add_argument("--sparse", action='store_true', help="Sparse matrix?", default=False)
     parser.add_argument("--log-level", type=int, help="Log level", default=20)
@@ -75,6 +76,7 @@ if __name__ == "__main__":
     parser.add_argument("--fig-size", type=float, help="Figure size (pixels)", default=1024.0)
     parser.add_argument("--count-limit", type=int, help="Lower limit of word count to display a word", default=50)
     parser.add_argument("--norm", action='store_true', help="Normalize word embeddings?", default=False)
+    parser.add_argument("--output", type=str, help="", required=True)
     args = parser.parse_args()
 
     # Init logging
@@ -162,6 +164,7 @@ if __name__ == "__main__":
         logger.info(u"Words similar to blue : {}".format(word2vec.get_similar_words(u"blue")))
 
         # Reduce with t-SNE
+        logger.info(u"Reducing word embedding with TSNE")
         model = TSNE(n_components=2, random_state=0)
         reduced_matrix = model.fit_transform(word_embeddings.T)
 
@@ -190,7 +193,12 @@ if __name__ == "__main__":
         # end for
 
         # Save image
-        plt.savefig(args.output + str(loop) + ".png")
+        logger.info(u"Saving figure to {}".format(args.image + str(loop) + ".png"))
+        plt.savefig(args.image + str(loop) + ".png")
+
+        # Save word embeddings
+        """logger.info(u"Saving word embeddings to {}".format(args.output))
+        pickle.dump((word2vec.get_word_indexes(), word_embeddings), open(args.output, 'wb'))"""
 
         # Reset word prediction
         word2vec.reset_word_count()

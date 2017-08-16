@@ -26,13 +26,17 @@ import io
 import os
 import argparse
 import numpy as np
+import pickle
+from core.converters.FuncWordConverter import FuncWordConverter
+from core.converters.WVConverter import WVConverter
+from core.converters.PosConverter import PosConverter
+from core.converters.TagConverter import TagConverter
 from core.converters.OneHotConverter import OneHotConverter
 from core.classifiers.EchoWordClassifier import EchoWordClassifier
 import logging
 from core.embeddings.Word2Vec import Word2Vec
 from sklearn.manifold import TSNE
 import pylab as plt
-import math
 from scipy.spatial.distance import euclidean
 
 #########################################################################
@@ -44,12 +48,12 @@ ex_name = "Authorship Attribution"
 ex_instance = "Two Authors One-hot representations"
 
 # Reservoir Properties
-rc_leak_rate = 1.0  # Leak rate
-rc_input_scaling = 1.0  # Input scaling
-rc_size = 50  # Reservoir size
-rc_spectral_radius = 0.99  # Spectral radius
+rc_leak_rate = 0.1  # Leak rate
+rc_input_scaling = 0.25  # Input scaling
+rc_size = 25  # Reservoir size
+rc_spectral_radius = 0.1  # Spectral radius
 rc_w_sparsity = 0.1
-rc_input_sparsity = 0.01
+rc_input_sparsity = 0.1
 
 ####################################################
 # Functions
@@ -88,21 +92,39 @@ if __name__ == "__main__":
     parser.add_argument("--n-documents", type=int, help="Number of documents per authors", default=10)
     parser.add_argument("--lang", type=str, help="Language (en_core_web_md, ar, en, es, pt)", default='en_core_web_md')
     parser.add_argument("--verbose", action='store_true', help="Verbose mode", default=False)
-    parser.add_argument("--voc-size", type=int, help="Vocabulary size", default=5000, required=True)
+    parser.add_argument("--voc-size", type=int, help="Vocabulary size", default=5000)
     parser.add_argument("--log-level", type=int, help="Log level", default=20)
     parser.add_argument("--sparse", action='store_true', help="Sparse matrix?", default=False)
     parser.add_argument("--fig-size", type=float, help="Figure size (pixels)", default=1024.0)
+    parser.add_argument("--converter", type=str, help="The text converter to use (fw, pos, tag, wv)", default='pos')
+    parser.add_argument("--pca-model", type=str, help="PCA model to load", default=None)
+    parser.add_argument("--in-components", type=int, help="Number of principal component to reduce inputs to",
+                        default=-1)
     args = parser.parse_args()
 
     # Init logging
     logging.basicConfig(level=args.log_level)
     logger = logging.getLogger(name="RCNLP")
 
-    # Word2Vec
-    word2vec = Word2Vec(dim=args.voc_size, mapper='one-hot')
+    # PCA model
+    pca_model = None
+    if args.pca_model is not None:
+        pca_model = pickle.load(open(args.pca_model, 'r'))
+    # end if
 
-    # Choose a text to symbol converter
-    converter = OneHotConverter(lang=args.lang, voc_size=args.voc_size, word2vec=word2vec)
+    # Choose a text to symbol converter.
+    if args.converter == "pos":
+        converter = PosConverter(resize=args.in_components, pca_model=pca_model)
+    elif args.converter == "tag":
+        converter = TagConverter(resize=args.in_components, pca_model=pca_model)
+    elif args.converter == "fw":
+        converter = FuncWordConverter(resize=args.in_components, pca_model=pca_model)
+    elif args.converter == "wv":
+        converter = WVConverter(resize=args.in_components, pca_model=pca_model)
+    else:
+        word2vec = Word2Vec(dim=args.voc_size, mapper='one-hot')
+        converter = OneHotConverter(lang=args.lang, voc_size=args.voc_size, word2vec=word2vec)
+    # end if
 
     # Total number of docs
     n_total_docs = args.n_authors * args.n_documents

@@ -255,6 +255,15 @@ class Word2Vec(object):
         self._word_embeddings = word_embeddings
     # end set_word_embeddings
 
+    # Get word indexes
+    def get_word_indexes(self):
+        """
+        Get word indexes
+        :return:
+        """
+        return self._word_index
+    # end get_word_indexes
+
     ###########################################
     # Override
     ###########################################
