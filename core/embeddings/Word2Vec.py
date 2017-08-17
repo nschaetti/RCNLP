@@ -185,6 +185,15 @@ class Word2Vec(object):
         # end try
     # end get_word_count
 
+    # Get word counts
+    def get_word_counts(self):
+        """
+        Get word counts
+        :return:
+        """
+        return self._word_counter
+    # end get_word_counts
+
     # Reset word count
     def reset_word_count(self):
         """
@@ -255,6 +264,16 @@ class Word2Vec(object):
         self._word_embeddings = word_embeddings
     # end set_word_embeddings
 
+    # Get word index
+    def get_word_index(self, word_text):
+        """
+        Get word index
+        :param word_text:
+        :return:
+        """
+        return self._word_index[word_text]
+    # end get_word_index
+
     # Get word indexes
     def get_word_indexes(self):
         """
@@ -321,7 +340,7 @@ class Word2Vec(object):
                 try:
                     self._word_counter[word_text] += 1
                 except KeyError:
-                    self._word_counter[word_text] = 0
+                    self._word_counter[word_text] = 1
                 # end try
                 if doc_array.size == 0:
                     doc_array = self[word_text]

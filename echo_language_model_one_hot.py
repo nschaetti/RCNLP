@@ -153,20 +153,42 @@ if __name__ == "__main__":
         # end if
 
         # Similarities
-        logger.info(u"Words similar to he : {}".format(word2vec.get_similar_words(u"he")))
-        logger.info(u"Words similar to computer : {}".format(word2vec.get_similar_words(u"computer")))
-        logger.info(u"Words similar to million : {}".format(word2vec.get_similar_words(u"million")))
-        logger.info(u"Words similar to Toronto : {}".format(word2vec.get_similar_words(u"Toronto")))
-        logger.info(u"Words similar to France : {}".format(word2vec.get_similar_words(u"France")))
-        logger.info(u"Words similar to phone : {}".format(word2vec.get_similar_words(u"phone")))
-        logger.info(u"Words similar to ask : {}".format(word2vec.get_similar_words(u"ask")))
-        logger.info(u"Words similar to september : {}".format(word2vec.get_similar_words(u"september")))
-        logger.info(u"Words similar to blue : {}".format(word2vec.get_similar_words(u"blue")))
+        logger.info(u"Words similar to he ({}) : {}".format(word2vec.get_word_count(u"he"), word2vec.get_similar_words(u"he")))
+        logger.info(u"Words similar to computer ({}) : {}".format(word2vec.get_word_count(u"computer"), word2vec.get_similar_words(u"computer")))
+        logger.info(u"Words similar to million ({}) : {}".format(word2vec.get_word_count(u"million"), word2vec.get_similar_words(u"million")))
+        logger.info(u"Words similar to Toronto ({}) : {}".format(word2vec.get_word_count(u"Toronto"), word2vec.get_similar_words(u"Toronto")))
+        logger.info(u"Words similar to France ({}) : {}".format(word2vec.get_word_count(u"France"), word2vec.get_similar_words(u"France")))
+        logger.info(u"Words similar to phone ({}) : {}".format(word2vec.get_word_count(u"phone"), word2vec.get_similar_words(u"phone")))
+        logger.info(u"Words similar to ask ({}) : {}".format(word2vec.get_word_count(u"ask"), word2vec.get_similar_words(u"ask")))
+        logger.info(u"Words similar to september ({}) : {}".format(word2vec.get_word_count(u"september"), word2vec.get_similar_words(u"september")))
+        logger.info(u"Words similar to blue ({}) : {}".format(word2vec.get_word_count(u"blue"), word2vec.get_similar_words(u"blue")))
+
+        # Order by word count
+        word_counters = list()
+        word_counts = word2vec.get_word_counts()
+        for word_text in word_counts.keys():
+            word_counters.append((word_text, word_counts[word_text]))
+        # end for
+        word_counters = sorted(word_counters, key=lambda tup: tup[1], reverse=True)
+
+        # Select top-words
+        selected_word_embeddings = np.zeros((501, args.count_limit))
+        selected_word_indexes = dict()
+        word_pos = 0
+        for (word_text, word_count) in word_counters[: args.count_limit]:
+            word_index = word2vec.get_word_index(word_text)
+            selected_word_embeddings[:, word_pos] = word_embeddings[:, word_index]
+            selected_word_indexes[word_text] = word_pos
+            word_pos += 1
+        # end for
+
+        # Word embedding matrix's size
+        logger.info(u"Selected word embeddings matrix's size : {}".format(selected_word_embeddings.shape))
 
         # Reduce with t-SNE
         logger.info(u"Reducing word embedding with TSNE")
         model = TSNE(n_components=2, random_state=0)
-        reduced_matrix = model.fit_transform(word_embeddings.T)
+        reduced_matrix = model.fit_transform(selected_word_embeddings.T)
 
         # Word embedding matrix's size
         logger.info(u"Reduced matrix's size : {}".format(reduced_matrix.shape))
@@ -179,17 +201,11 @@ if __name__ == "__main__":
         min_y = np.amin(reduced_matrix, axis=0)[1]
         plt.xlim((min_x * 1.2, max_x * 1.2))
         plt.ylim((min_y * 1.2, max_y * 1.2))
-        for word_index in np.arange(args.voc_size):
-            if word2vec.get_word_by_index(word_index) is not None:
-                word_text = word2vec.get_word_by_index(word_index)
-                if word2vec.get_word_count(word_text) >= args.count_limit:
-                    plt.scatter(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], 0.5)
-                    plt.text(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], word_text, fontsize=2.5)
-                    """plt.annotate(word2vec.get_word_by_index(word_index),
-                                 (reduced_matrix[word_index, 0], reduced_matrix[word_index, 1]),
-                                 arrowprops=dict(facecolor='red', shrink=0.025))"""
-                # end if
-            # end if
+        for word_text in selected_word_indexes.keys():
+            word_count = word2vec.get_word_count(word_text)
+            word_index = selected_word_indexes[word_text]
+            plt.scatter(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], 0.5)
+            plt.text(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], word_text + u" (" + str(word_count) + u")", fontsize=2.5)
         # end for
 
         # Save image
@@ -197,8 +213,8 @@ if __name__ == "__main__":
         plt.savefig(args.image + str(loop) + ".png")
 
         # Save word embeddings
-        """logger.info(u"Saving word embeddings to {}".format(args.output))
-        pickle.dump((word2vec.get_word_indexes(), word_embeddings), open(args.output, 'wb'))"""
+        logger.info(u"Saving word embeddings to {}".format(args.output))
+        pickle.dump((word2vec.get_word_indexes(), word_embeddings), open(args.output, 'wb'))
 
         # Reset word prediction
         word2vec.reset_word_count()
