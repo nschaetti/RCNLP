@@ -12,14 +12,15 @@ class WordPredictionDataset(object):
     """
 
     # Constructor
-    def __init__(self, word2vec, task_type='predict'):
+    def __init__(self, word2vec, before=0, after=1):
         """
         Constructor
         :param word2vec: Word to vec converter
         :param task_type: Task type (predict, remember, predict_and_remember)
         """
         self._word2vec = word2vec
-        self._task_type = task_type
+        self._before = before
+        self._after = after
         self._X = list()
         self._Y = list()
     # end __init__
@@ -33,23 +34,24 @@ class WordPredictionDataset(object):
         # Current word vector
         word_vectors = self._word2vec(text)
 
-        # Zero vector
-        zero_vector = sp.csr_matrix(np.zeros(self._word2vec.get_dimension()))
+        # Before zero vector
+        before_zero_vector = sp.csr_matrix(np.zeros((self._before, self._word2vec.get_dimension())))
+        after_zero_vector = sp.csr_matrix(np.zeros((self._after, self._word2vec.get_dimension())))
 
         # Add to dataset
-        if self._task_type == 'predict':
-            input_vectors = sp.vstack((zero_vector, word_vectors))
-            output_vectors = sp.vstack((word_vectors, zero_vector))
-        elif self._task_type == 'remember':
-            input_vectors = sp.vstack((word_vectors, zero_vector))
-            output_vectors = sp.vstack((zero_vector, word_vectors))
+        if self._after != 0 and self._before == 0:
+            input_vectors = sp.vstack((after_zero_vector, word_vectors))
+            output_vectors = sp.vstack((word_vectors, after_zero_vector))
+        elif self._before != 0 and self._after == 0:
+            input_vectors = sp.vstack((word_vectors, before_zero_vector))
+            output_vectors = sp.vstack((before_zero_vector, word_vectors))
         else:
             # Inputs
-            input_vectors = sp.vstack((zero_vector, word_vectors, zero_vector))
+            input_vectors = sp.vstack((after_zero_vector, word_vectors, before_zero_vector))
             # Remember
-            remember_vectors = sp.vstack((zero_vector, zero_vector, word_vectors))
+            remember_vectors = sp.vstack((after_zero_vector, before_zero_vector, word_vectors))
             # Predict
-            predict_vectors = sp.vstack((word_vectors, zero_vector, zero_vector))
+            predict_vectors = sp.vstack((word_vectors, after_zero_vector, before_zero_vector))
             # Output
             output_vectors = sp.hstack((remember_vectors, predict_vectors))
         # end if

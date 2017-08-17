@@ -33,7 +33,7 @@ class EchoWordPrediction(object):
 
     # Constructor
     def __init__(self, word2vec, size, leaky_rate, spectral_radius, input_scaling=0.25, input_sparsity=0.1,
-                 w_sparsity=0.1, w_in=None, w=None, use_sparse_matrix=False, task_type='predict'):
+                 w_sparsity=0.1, w_in=None, w=None, use_sparse_matrix=False, before=0, after=1):
         """
         Constructor
         :param word2vec:
@@ -44,7 +44,8 @@ class EchoWordPrediction(object):
         :param input_sparsity:
         :param w_sparsity:
         :param w:
-        :param task_type:
+        :param before: Word positions to remember
+        :param after: Word positions to predict
         """
         # Properties
         self._word2vec = word2vec
@@ -52,17 +53,17 @@ class EchoWordPrediction(object):
         self._leaky_rate = leaky_rate
         self._spectral_radius = spectral_radius
         self._trained = False
-        self._task_type = task_type
+        self._before = before
+        self._after = after
 
         # Wordprediction dataset generator
-        self._dataset = WordPredictionDataset(word2vec=word2vec, task_type=task_type)
+        self._dataset = WordPredictionDataset(word2vec=word2vec, before=before, after=after)
+
+        # Number of word embeddings
+        self._n_word_embeddings = before + after
 
         # Dimension
-        if self._task_type == 'predict' or self._task_type == 'remember':
-            input_dim = word2vec.get_dimension()
-        else:
-            input_dim = word2vec.get_dimension() * 2
-        # end if
+        input_dim = (word2vec.get_dimension() * before) + (word2vec.get_dimension() * after)
 
         # Create the reservoir
         self._reservoir = Oger.nodes.LeakyReservoirNode(input_dim=input_dim, output_dim=self._size,
@@ -80,6 +81,19 @@ class EchoWordPrediction(object):
         # Flow
         self._flow = mdp.Flow([self._reservoir, self._readout], verbose=1)
     # end __init__
+
+    ###############################################
+    # Public
+    ###############################################
+
+    # Get number of word embeddings
+    def get_n_word_embeddings(self):
+        """
+        Get number of word embeddings
+        :return:
+        """
+        return self._n_word_embeddings
+    # end get_n_word_embeddings
 
     # Change W_in
     def set_w_in(self, w_in):
@@ -158,7 +172,19 @@ class EchoWordPrediction(object):
         :return:
         """
         if self._trained:
-            return self._readout.beta
+            if self._n_word_embeddings == 1:
+                return self._readout.beta
+            else:
+                n_words = self._readout.beta.shape[1]
+                single_dimension = self._readout.beta.shape[0]
+                word_embeddings = np.zeros((single_dimension * self._n_word_embeddings, n_words))
+                # For each word embeddings
+                for word_index in range(n_words):
+                    # For each word embedding
+                    for embedding_index in range(self._n_word_embeddings):
+                        word_embeddings[embedding_index*single_dimension, word_index] = self._readout.beta[:, embedding_index*n_words]
+                # end for
+            # end if
         else:
             raise ReservoirNotTrainedException(u"Reservoir not trained!")
         # end if
