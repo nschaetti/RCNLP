@@ -236,6 +236,9 @@ class Metrics:
         # Stock correlation factors
         correlations = np.array([])
 
+        # Word count
+        word_count = 0
+
         # For each word in dataset
         for word1, sims in word_similarity:
             if len(sims) > 1:
@@ -256,12 +259,15 @@ class Metrics:
 
                         # Add
                         correlations = np.append(correlations, corfact)
+
+                        # Word count
+                        word_count += sim_vector1.shape[0]
                     # end if
                 # end if
             # end if
         # end for
 
-        return np.average(correlations)
+        return np.average(correlations), word_count
     # end relatedness
 
 # end Metrics
