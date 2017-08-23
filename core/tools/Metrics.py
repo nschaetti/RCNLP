@@ -247,8 +247,12 @@ class Metrics:
                     sim_vector2 = np.array([])
                     for word2, similarity in sims:
                         if word2 in word_embeddings.words():
-                            sim_vector1 = np.append(sim_vector1, similarity)
-                            sim_vector2 = np.append(sim_vector2, np.abs(word_embeddings.similarity(word1, word2)))
+                            sim1 = similarity
+                            sim2 = word_embeddings.similarity(word1, word2)
+                            if sim1 is not None and sim2 is not None:
+                                sim_vector1 = np.append(sim_vector1, sim1)
+                                sim_vector2 = np.append(sim_vector2, np.abs(sim2))
+                            # end if
                         # end if
                     # end for
 
@@ -257,11 +261,13 @@ class Metrics:
                         # Compute correlation
                         corfact = np.corrcoef(sim_vector1, sim_vector2)[0, 1]
 
-                        # Add
-                        correlations = np.append(correlations, corfact)
+                        if not np.isnan(corfact):
+                            # Add
+                            correlations = np.append(correlations, corfact)
 
-                        # Word count
-                        word_count += sim_vector1.shape[0]
+                            # Word count
+                            word_count += sim_vector1.shape[0]
+                        # end if
                     # end if
                 # end if
             # end if
