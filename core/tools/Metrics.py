@@ -24,6 +24,7 @@
 # Import package
 import math
 import logging
+import numpy as np
 
 
 class Metrics:
@@ -222,5 +223,45 @@ class Metrics:
 
         return success / count * 100.0
     # end success_rate
+
+    # Relatedness : evaluate word embeddings
+    @staticmethod
+    def relatedness(word_similarity, word_embeddings):
+        """
+        Relatedness : evaluate word embeddings
+        :param word_similarity:
+        :param word_embeddings:
+        :return:
+        """
+        # Stock correlation factors
+        correlations = np.array([])
+
+        # For each word in dataset
+        for word1, sims in word_similarity:
+            if len(sims) > 1:
+                if word1 in word_embeddings.words():
+                    sim_vector1 = np.array([])
+                    sim_vector2 = np.array([])
+                    for word2, similarity in sims:
+                        if word2 in word_embeddings.words():
+                            sim_vector1 = np.append(sim_vector1, similarity)
+                            sim_vector2 = np.append(sim_vector2, np.abs(word_embeddings.similarity(word1, word2)))
+                        # end if
+                    # end for
+
+                    # If more than one word
+                    if sim_vector1.shape[0] > 1:
+                        # Compute correlation
+                        corfact = np.corrcoef(sim_vector1, sim_vector2)[0, 1]
+
+                        # Add
+                        correlations = np.append(correlations, corfact)
+                    # end if
+                # end if
+            # end if
+        # end for
+
+        return np.average(correlations)
+    # end relatedness
 
 # end Metrics
