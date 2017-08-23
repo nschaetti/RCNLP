@@ -26,7 +26,7 @@ import argparse
 import numpy as np
 import os
 import io
-from core.embeddings.Word2Vec import Word2Vec
+from core.embeddings.Word2Vec import Word2Vec, OneHotVectorFullException
 from core.embeddings.EchoWordPrediction import EchoWordPrediction
 from core.embeddings.WordPredictionDataset import WordPredictionDataset
 from scipy.spatial.distance import euclidean
@@ -35,6 +35,8 @@ import pylab as plt
 from sklearn.decomposition import PCA
 import logging
 import pickle
+from core.embeddings.Wordsim353 import Wordsim353
+from core.tools.Metrics import Metrics
 
 #########################################################################
 # Experience settings
@@ -67,7 +69,7 @@ if __name__ == "__main__":
 
     # Argument
     parser.add_argument("--dataset", type=str, help="Dataset's directory", required=True)
-    parser.add_argument("--image", type=str, help="Output image", required=True)
+    parser.add_argument("--image", type=str, help="Output image", default=None, required=False)
     parser.add_argument("--size", type=int, help="How many file to take in the dataset", default=-1)
     parser.add_argument("--sparse", action='store_true', help="Sparse matrix?", default=False)
     parser.add_argument("--log-level", type=int, help="Log level", default=20)
@@ -76,7 +78,8 @@ if __name__ == "__main__":
     parser.add_argument("--fig-size", type=float, help="Figure size (pixels)", default=1024.0)
     parser.add_argument("--count-limit", type=int, help="Lower limit of word count to display a word", default=50)
     parser.add_argument("--norm", action='store_true', help="Normalize word embeddings?", default=False)
-    parser.add_argument("--output", type=str, help="", required=True)
+    parser.add_argument("--output", type=str, help="", default=None, required=False)
+    parser.add_argument("--wordsims", type=str, help="Word similarity dataset", required=True)
     args = parser.parse_args()
 
     # Init logging
@@ -86,6 +89,9 @@ if __name__ == "__main__":
     # Print precision
     np.set_printoptions(precision=3)
     np.set_printoptions(threshold=np.nan)
+
+    # Load Wordsim353
+    wordsim353 = Wordsim353.load(args.wordsims)
 
     # Word2Vec
     word2vec = Word2Vec(dim=args.voc_size, mapper='one-hot')
@@ -115,10 +121,18 @@ if __name__ == "__main__":
             # end if
             file_path = os.path.join(args.dataset, file)
             logger.info(u"Adding text file {}/{} : {}".format(index+1, args.size, file_path))
-            esn_word_prediction.add(io.open(file_path, 'r').read())
-            logger.info(u"{} tokens in vocabulary".format(word2vec.get_n_words()))
-            logger.info(u"{} tokens in dataset".format(word2vec.get_total_count()))
+            try:
+                esn_word_prediction.add(io.open(file_path, 'r').read())
+            except OneHotVectorFullException:
+                logger.warning(u"One-hot vector representation is full!")
+                break
+                pass
+            # end try
         # end for
+
+        # Word counts and voc size
+        logger.info(u"Vocabulary size : {}".format(word2vec.get_n_words()))
+        logger.info(u"Number of tokens : {}".format(word2vec.get_total_count()))
 
         # Train
         logger.info(u"Training...")
@@ -163,58 +177,67 @@ if __name__ == "__main__":
         logger.info(u"Words similar to september ({}) : {}".format(word2vec.get_word_count(u"september"), word2vec.get_similar_words(u"september")))
         logger.info(u"Words similar to blue ({}) : {}".format(word2vec.get_word_count(u"blue"), word2vec.get_similar_words(u"blue")))
 
-        # Order by word count
-        word_counters = list()
-        word_counts = word2vec.get_word_counts()
-        for word_text in word_counts.keys():
-            word_counters.append((word_text, word_counts[word_text]))
-        # end for
-        word_counters = sorted(word_counters, key=lambda tup: tup[1], reverse=True)
+        # Test relatedness
+        relatedness, relatedness_words = Metrics.relatedness(wordsim353, word2vec)
+        print(u"Relatedness : {}, on {} words".format(relatedness, relatedness_words))
 
-        # Select top-words
-        selected_word_embeddings = np.zeros((501, args.count_limit))
-        selected_word_indexes = dict()
-        word_pos = 0
-        for (word_text, word_count) in word_counters[: args.count_limit]:
-            word_index = word2vec.get_word_index(word_text)
-            selected_word_embeddings[:, word_pos] = word_embeddings[:, word_index]
-            selected_word_indexes[word_text] = word_pos
-            word_pos += 1
-        # end for
+        # If we want a figure
+        if args.image is not None:
+            # Order by word count
+            word_counters = list()
+            word_counts = word2vec.get_word_counts()
+            for word_text in word_counts.keys():
+                word_counters.append((word_text, word_counts[word_text]))
+            # end for
+            word_counters = sorted(word_counters, key=lambda tup: tup[1], reverse=True)
 
-        # Word embedding matrix's size
-        logger.info(u"Selected word embeddings matrix's size : {}".format(selected_word_embeddings.shape))
+            # Select top-words
+            selected_word_embeddings = np.zeros((501, args.count_limit))
+            selected_word_indexes = dict()
+            word_pos = 0
+            for (word_text, word_count) in word_counters[: args.count_limit]:
+                word_index = word2vec.get_word_index(word_text)
+                selected_word_embeddings[:, word_pos] = word_embeddings[:, word_index]
+                selected_word_indexes[word_text] = word_pos
+                word_pos += 1
+            # end for
 
-        # Reduce with t-SNE
-        logger.info(u"Reducing word embedding with TSNE")
-        model = TSNE(n_components=2, random_state=0)
-        reduced_matrix = model.fit_transform(selected_word_embeddings.T)
+            # Word embedding matrix's size
+            logger.info(u"Selected word embeddings matrix's size : {}".format(selected_word_embeddings.shape))
 
-        # Word embedding matrix's size
-        logger.info(u"Reduced matrix's size : {}".format(reduced_matrix.shape))
+            # Reduce with t-SNE
+            logger.info(u"Reducing word embedding with TSNE")
+            model = TSNE(n_components=2, random_state=0)
+            reduced_matrix = model.fit_transform(selected_word_embeddings.T)
 
-        # Show t-SNE
-        plt.figure(figsize=(args.fig_size*0.003, args.fig_size*0.003), dpi=300)
-        max_x = np.amax(reduced_matrix, axis=0)[0]
-        max_y = np.amax(reduced_matrix, axis=0)[1]
-        min_x = np.amin(reduced_matrix, axis=0)[0]
-        min_y = np.amin(reduced_matrix, axis=0)[1]
-        plt.xlim((min_x * 1.2, max_x * 1.2))
-        plt.ylim((min_y * 1.2, max_y * 1.2))
-        for word_text in selected_word_indexes.keys():
-            word_count = word2vec.get_word_count(word_text)
-            word_index = selected_word_indexes[word_text]
-            plt.scatter(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], 0.5)
-            plt.text(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], word_text + u" (" + str(word_count) + u")", fontsize=2.5)
-        # end for
+            # Word embedding matrix's size
+            logger.info(u"Reduced matrix's size : {}".format(reduced_matrix.shape))
 
-        # Save image
-        logger.info(u"Saving figure to {}".format(args.image + str(loop) + ".png"))
-        plt.savefig(args.image + str(loop) + ".png")
+            # Show t-SNE
+            plt.figure(figsize=(args.fig_size*0.003, args.fig_size*0.003), dpi=300)
+            max_x = np.amax(reduced_matrix, axis=0)[0]
+            max_y = np.amax(reduced_matrix, axis=0)[1]
+            min_x = np.amin(reduced_matrix, axis=0)[0]
+            min_y = np.amin(reduced_matrix, axis=0)[1]
+            plt.xlim((min_x * 1.2, max_x * 1.2))
+            plt.ylim((min_y * 1.2, max_y * 1.2))
+            for word_text in selected_word_indexes.keys():
+                word_count = word2vec.get_word_count(word_text)
+                word_index = selected_word_indexes[word_text]
+                plt.scatter(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], 0.5)
+                plt.text(reduced_matrix[word_index, 0], reduced_matrix[word_index, 1], word_text + u" (" + str(word_count) + u")", fontsize=2.5)
+            # end for
+
+            # Save image
+            logger.info(u"Saving figure to {}".format(args.image + str(loop) + ".png"))
+            plt.savefig(args.image + str(loop) + ".png")
+        # end if
 
         # Save word embeddings
-        logger.info(u"Saving word embeddings to {}".format(args.output))
-        pickle.dump((word2vec.get_word_indexes(), word_embeddings), open(args.output, 'wb'))
+        if args.output is not None:
+            logger.info(u"Saving word embeddings to {}".format(args.output))
+            pickle.dump((word2vec.get_word_indexes(), word_embeddings), open(args.output, 'wb'))
+        # end if
 
         # Reset word prediction
         word2vec.reset_word_count()
