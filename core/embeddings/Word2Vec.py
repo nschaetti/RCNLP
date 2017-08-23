@@ -4,7 +4,9 @@ import numpy as np
 import spacy
 from numpy import linalg as LA
 import scipy.sparse as sp
+from sklearn.metrics.pairwise import cosine_similarity
 from scipy.spatial.distance import euclidean
+from .WordSimilarity import WordSimilarity
 
 ###########################################################
 # Exceptions
@@ -34,7 +36,7 @@ class OneHotVectorFullException(Exception):
 
 
 # Word to Dense vector converters
-class Word2Vec(object):
+class Word2Vec(WordSimilarity):
     """
     Word to Dense Vector converters
     """
@@ -214,7 +216,7 @@ class Word2Vec(object):
     # end get_total_count
 
     # Get word similarities
-    def get_similarity(self, word1, word2):
+    def similarity(self, word1, word2):
         """
         Get word similarities
         :param word1:
@@ -223,14 +225,20 @@ class Word2Vec(object):
         """
         word1 = word1.lower()
         word2 = word2.lower()
-        if word1 not in self._voc.keys() or word2 not in self._voc.keys():
+        if word1 == word2:
+            return 1.0
+        elif word1 not in self._voc.keys() or word2 not in self._voc.keys():
             return 0
         else:
             word1_index = self._word_index[word1]
             word2_index = self._word_index[word2]
-            return euclidean(self._word_embeddings[:, word1_index], self._word_embeddings[:, word2_index])
+            word1_vector = self._word_embeddings[:, word1_index]
+            word2_vector = self._word_embeddings[:, word2_index]
+            word1_vector = word1_vector.reshape(1, -1)
+            word2_vector = word2_vector.reshape(1, -1)
+            return cosine_similarity(word1_vector, word2_vector)
         # end if
-    # end get_similartiy
+    # end similarity
 
     # Get similar words
     def get_similar_words(self, word1, limit=10):
@@ -244,12 +252,12 @@ class Word2Vec(object):
         similarities = list()
         for word2 in self._voc.keys():
             if word1 != word2:
-                similarities.append((word2, self.get_similarity(word1, word2)))
+                similarities.append((word2, self.similarity(word1, word2)))
             # end if
         # end for
 
         # Sort
-        similarities.sort(key=lambda tup: tup[1])
+        similarities.sort(key=lambda tup: tup[1], reverse=True)
 
         return similarities[:limit]
     # end get_similar_word
