@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     # Init logging
     logging.basicConfig(level=args.log_level)
-    logger = logging.getLogger(name="RCNLP")
+    logging.basicConfig(level=args.log_level, format='%(asctime)s :: %(levelname)s :: %(message)s')
 
     # Print precision
     np.set_printoptions(precision=3)
@@ -124,14 +124,14 @@ if __name__ == "__main__":
             # Is DIR
             if os.path.isdir(directory_path):
                 # Directory path
-                logger.info(u"Entering directory {}".format(directory_path))
+                logging.info(u"Entering directory {}".format(directory_path))
 
                 # List file
                 for filename in os.listdir(directory_path):
                     file_path = os.path.join(directory_path, filename)
 
                     # Directory path
-                    logger.info(u"Adding file {}".format(file_path))
+                    logging.info(u"Adding file {}".format(file_path))
 
                     # Open file
                     text_content = io.open(file_path, 'r', encoding='utf-8').read()
@@ -143,17 +143,17 @@ if __name__ == "__main__":
                             try:
                                 esn_word_prediction.add(line)
                             except OneHotVectorFullException:
-                                logger.warning(u"One-hot vector representation is full!")
+                                logging.warning(u"One-hot vector representation is full!")
                                 cont_add = False
                                 break
                                 pass
                             # end try
 
                             # Display
-                            if word2vec.get_total_count() - token_count > 50000:
+                            if word2vec.get_total_count() - token_count > 100000:
                                 token_count = word2vec.get_total_count()
-                                logger.info(u"Vocabulary size : {}".format(word2vec.get_n_words()))
-                                logger.info(u"Number of tokens : {}".format(word2vec.get_total_count()))
+                                logging.info(u"Vocabulary size : {}".format(word2vec.get_n_words()))
+                                logging.info(u"Number of tokens : {}".format(word2vec.get_total_count()))
                             # end if
 
                             # Count tokens
@@ -165,8 +165,8 @@ if __name__ == "__main__":
                     # end for
 
                     # Word counts and voc size
-                    logger.info(u"Vocabulary size : {}".format(word2vec.get_n_words()))
-                    logger.info(u"Number of tokens : {}".format(word2vec.get_total_count()))
+                    logging.info(u"Vocabulary size : {}".format(word2vec.get_n_words()))
+                    logging.info(u"Number of tokens : {}".format(word2vec.get_total_count()))
 
                     # Continue
                     if not cont_add:
@@ -182,27 +182,27 @@ if __name__ == "__main__":
         # end for
 
         # Word counts and voc size
-        logger.info(u"Vocabulary size : {}".format(word2vec.get_n_words()))
-        logger.info(u"Number of tokens : {}".format(word2vec.get_total_count()))
+        logging.info(u"Vocabulary size : {}".format(word2vec.get_n_words()))
+        logging.info(u"Number of tokens : {}".format(word2vec.get_total_count()))
 
         # Train
-        logger.info(u"Training...")
+        logging.info(u"Training...")
         esn_word_prediction.train()
 
         # Get word embeddings
         word_embeddings = esn_word_prediction.get_word_embeddings()
 
         # Word embedding matrix's size
-        logger.info(u"Word embedding matrix's size : {}".format(word_embeddings.shape))
-        logger.info(u"Word embedding vectors average : {}".format(np.average(word_embeddings)))
-        logger.info(u"Word embedding vectors sddev : {}".format(np.std(word_embeddings)))
+        logging.info(u"Word embedding matrix's size : {}".format(word_embeddings.shape))
+        logging.info(u"Word embedding vectors average : {}".format(np.average(word_embeddings)))
+        logging.info(u"Word embedding vectors sddev : {}".format(np.std(word_embeddings)))
 
         # Normalize word embeddings
         if args.norm:
             word_embeddings -= np.average(word_embeddings)
             word_embeddings /= np.std(word_embeddings)
-            logger.info(u"Normalized word embedding vectors average : {}".format(np.average(word_embeddings)))
-            logger.info(u"Normalized word embedding vectors sddev : {}".format(np.std(word_embeddings)))
+            logging.info(u"Normalized word embedding vectors average : {}".format(np.average(word_embeddings)))
+            logging.info(u"Normalized word embedding vectors sddev : {}".format(np.std(word_embeddings)))
         # end if
 
         # Set word embeddings
@@ -214,19 +214,25 @@ if __name__ == "__main__":
             for i in range(args.voc_size):
                 average_distance += euclidean(word_embeddings[:, i], last_word_embeddings[:, i])
             # end for
-            logger.info(u"Distance with preceding word embeddings : {}".format(average_distance / float(args.voc_size)))
+            logging.info(u"Distance with preceding word embeddings : {}".format(average_distance / float(args.voc_size)))
+        # end if
+
+        # Save word embeddings
+        if args.output is not None:
+            logging.info(u"Saving word embeddings to {}".format(args.output))
+            pickle.dump((word2vec.get_word_indexes(), word_embeddings), open(args.output, 'wb'))
         # end if
 
         # Similarities
-        logger.info(u"Words similar to he ({}) : {}".format(word2vec.get_word_count(u"he"), word2vec.get_similar_words(u"he")))
-        logger.info(u"Words similar to computer ({}) : {}".format(word2vec.get_word_count(u"computer"), word2vec.get_similar_words(u"computer")))
-        logger.info(u"Words similar to million ({}) : {}".format(word2vec.get_word_count(u"million"), word2vec.get_similar_words(u"million")))
-        logger.info(u"Words similar to Toronto ({}) : {}".format(word2vec.get_word_count(u"Toronto"), word2vec.get_similar_words(u"Toronto")))
-        logger.info(u"Words similar to France ({}) : {}".format(word2vec.get_word_count(u"France"), word2vec.get_similar_words(u"France")))
-        logger.info(u"Words similar to phone ({}) : {}".format(word2vec.get_word_count(u"phone"), word2vec.get_similar_words(u"phone")))
-        logger.info(u"Words similar to ask ({}) : {}".format(word2vec.get_word_count(u"ask"), word2vec.get_similar_words(u"ask")))
-        logger.info(u"Words similar to september ({}) : {}".format(word2vec.get_word_count(u"september"), word2vec.get_similar_words(u"september")))
-        logger.info(u"Words similar to blue ({}) : {}".format(word2vec.get_word_count(u"blue"), word2vec.get_similar_words(u"blue")))
+        logging.info(u"Words similar to he ({}) : {}".format(word2vec.get_word_count(u"he"), word2vec.get_similar_words(u"he")))
+        logging.info(u"Words similar to computer ({}) : {}".format(word2vec.get_word_count(u"computer"), word2vec.get_similar_words(u"computer")))
+        logging.info(u"Words similar to million ({}) : {}".format(word2vec.get_word_count(u"million"), word2vec.get_similar_words(u"million")))
+        logging.info(u"Words similar to Toronto ({}) : {}".format(word2vec.get_word_count(u"Toronto"), word2vec.get_similar_words(u"Toronto")))
+        logging.info(u"Words similar to France ({}) : {}".format(word2vec.get_word_count(u"France"), word2vec.get_similar_words(u"France")))
+        logging.info(u"Words similar to phone ({}) : {}".format(word2vec.get_word_count(u"phone"), word2vec.get_similar_words(u"phone")))
+        logging.info(u"Words similar to ask ({}) : {}".format(word2vec.get_word_count(u"ask"), word2vec.get_similar_words(u"ask")))
+        logging.info(u"Words similar to september ({}) : {}".format(word2vec.get_word_count(u"september"), word2vec.get_similar_words(u"september")))
+        logging.info(u"Words similar to blue ({}) : {}".format(word2vec.get_word_count(u"blue"), word2vec.get_similar_words(u"blue")))
 
         # Test relatedness
         relatedness, relatedness_words = Metrics.relatedness(wordsim353, word2vec)
@@ -254,15 +260,15 @@ if __name__ == "__main__":
             # end for
 
             # Word embedding matrix's size
-            logger.info(u"Selected word embeddings matrix's size : {}".format(selected_word_embeddings.shape))
+            logging.info(u"Selected word embeddings matrix's size : {}".format(selected_word_embeddings.shape))
 
             # Reduce with t-SNE
-            logger.info(u"Reducing word embedding with TSNE")
+            logging.info(u"Reducing word embedding with TSNE")
             model = TSNE(n_components=2, random_state=0)
             reduced_matrix = model.fit_transform(selected_word_embeddings.T)
 
             # Word embedding matrix's size
-            logger.info(u"Reduced matrix's size : {}".format(reduced_matrix.shape))
+            logging.info(u"Reduced matrix's size : {}".format(reduced_matrix.shape))
 
             # Show t-SNE
             plt.figure(figsize=(args.fig_size*0.003, args.fig_size*0.003), dpi=300)
@@ -280,14 +286,8 @@ if __name__ == "__main__":
             # end for
 
             # Save image
-            logger.info(u"Saving figure to {}".format(args.image + str(loop) + ".png"))
+            logging.info(u"Saving figure to {}".format(args.image + str(loop) + ".png"))
             plt.savefig(args.image + str(loop) + ".png")
-        # end if
-
-        # Save word embeddings
-        if args.output is not None:
-            logger.info(u"Saving word embeddings to {}".format(args.output))
-            pickle.dump((word2vec.get_word_indexes(), word_embeddings), open(args.output, 'wb'))
         # end if
 
         # Reset word prediction
