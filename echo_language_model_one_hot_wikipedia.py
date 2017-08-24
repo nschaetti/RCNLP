@@ -44,7 +44,7 @@ from core.tools.Metrics import Metrics
 
 # Exp. info
 ex_name = "Echo Word Prediction Experience"
-ex_instance = "Echo Language Model One Hot"
+ex_instance = "Echo Language Model One Hot on Wikipedia"
 
 # Reservoir Properties
 rc_leak_rate = 0.5  # Leak rate
@@ -65,12 +65,12 @@ rc_input_sparsity = 0.01
 if __name__ == "__main__":
 
     # Argument parser
-    parser = argparse.ArgumentParser(description="RCNLP - Word prediction with Echo State Network and one-hot vector")
+    parser = argparse.ArgumentParser(description="RCNLP - Word prediction with Echo State Network and one-hot vector on Wikipedia")
 
     # Argument
     parser.add_argument("--dataset", type=str, help="Dataset's directory", required=True)
     parser.add_argument("--image", type=str, help="Output image", default=None, required=False)
-    parser.add_argument("--size", type=int, help="How many file to take in the dataset", default=-1)
+    parser.add_argument("--size", type=int, help="Max tokens to take in the dataset", default=-1)
     parser.add_argument("--sparse", action='store_true', help="Sparse matrix?", default=False)
     parser.add_argument("--log-level", type=int, help="Log level", default=20)
     parser.add_argument("--voc-size", type=int, help="Vocabulary size", default=5000, required=True)
@@ -114,20 +114,71 @@ if __name__ == "__main__":
             esn_word_prediction.set_w_in(word_embeddings[:-1, :])
         # end if
 
-        # Add text examples
-        for index, file in enumerate(os.listdir(args.dataset)):
-            if args.size != -1 and index >= args.size:
+        # For each directory
+        cont_add = True
+        token_count = 0
+        for subdirectory in os.listdir(args.dataset):
+            # Directory path
+            directory_path = os.path.join(args.dataset, subdirectory)
+
+            # Is DIR
+            if os.path.isdir(directory_path):
+                # Directory path
+                logger.info(u"Entering directory {}".format(directory_path))
+
+                # List file
+                for filename in os.listdir(directory_path):
+                    file_path = os.path.join(directory_path, filename)
+
+                    # Directory path
+                    logger.info(u"Adding file {}".format(file_path))
+
+                    # Open file
+                    text_content = io.open(file_path, 'r', encoding='utf-8').read()
+
+                    # For each line
+                    for line in text_content.split(u"\n"):
+                        if line != u"#" * 100 and len(line) > 1:
+                            # Try to add
+                            try:
+                                esn_word_prediction.add(line)
+                            except OneHotVectorFullException:
+                                logger.warning(u"One-hot vector representation is full!")
+                                cont_add = False
+                                break
+                                pass
+                            # end try
+
+                            # Display
+                            if word2vec.get_total_count() - token_count > 50000:
+                                token_count = word2vec.get_total_count()
+                                logger.info(u"Vocabulary size : {}".format(word2vec.get_n_words()))
+                                logger.info(u"Number of tokens : {}".format(word2vec.get_total_count()))
+                            # end if
+
+                            # Count tokens
+                            if args.size != -1 and word2vec.get_total_count() > args.size:
+                                cont_add = False
+                                break
+                            # end if
+                        # end if
+                    # end for
+
+                    # Word counts and voc size
+                    logger.info(u"Vocabulary size : {}".format(word2vec.get_n_words()))
+                    logger.info(u"Number of tokens : {}".format(word2vec.get_total_count()))
+
+                    # Continue
+                    if not cont_add:
+                        break
+                    # end if
+                # end for
+            # end if
+
+            # Continue
+            if not cont_add:
                 break
             # end if
-            file_path = os.path.join(args.dataset, file)
-            logger.info(u"Adding text file {}/{} : {}".format(index+1, args.size, file_path))
-            try:
-                esn_word_prediction.add(io.open(file_path, 'r').read())
-            except OneHotVectorFullException:
-                logger.warning(u"One-hot vector representation is full!")
-                break
-                pass
-            # end try
         # end for
 
         # Word counts and voc size
