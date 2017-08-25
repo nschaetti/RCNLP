@@ -226,11 +226,12 @@ class Metrics:
 
     # Relatedness : evaluate word embeddings
     @staticmethod
-    def relatedness(word_similarity, word_embeddings):
+    def relatedness(word_similarity, word_embeddings, distance_measure='euclidian'):
         """
         Relatedness : evaluate word embeddings
         :param word_similarity:
         :param word_embeddings:
+        :param distance_measure:
         :return:
         """
         # Stock correlation factors
@@ -248,10 +249,10 @@ class Metrics:
                     for word2, similarity in sims:
                         if word2 in word_embeddings.words():
                             sim1 = similarity
-                            sim2 = word_embeddings.similarity(word1, word2)
+                            sim2 = word_embeddings.similarity(word1, word2, distance_measure)
                             if sim1 is not None and sim2 is not None:
                                 sim_vector1 = np.append(sim_vector1, sim1)
-                                sim_vector2 = np.append(sim_vector2, np.abs(sim2))
+                                sim_vector2 = np.append(sim_vector2, sim2)
                             # end if
                         # end if
                     # end for
