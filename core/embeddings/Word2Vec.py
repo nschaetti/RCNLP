@@ -181,7 +181,7 @@ class Word2Vec(WordSimilarity):
         :return:
         """
         try:
-            return self._word_counter[word]
+            return self._word_counter[word.lower()]
         except KeyError:
             return 0
         # end try
@@ -215,12 +215,42 @@ class Word2Vec(WordSimilarity):
         return self._total_counter
     # end get_total_count
 
+    # Get nearest word
+    def nearest_word(self, word_embedding_vector, measure='euclidian', limit=10):
+        """
+        Get the nearest word from a vector
+        :param word_embedding_vector:
+        :param measure:
+        :return:
+        """
+        similarities = list()
+        for word in self._voc.keys():
+            word_index = self._word_index[word]
+            word_vector = self._word_embeddings[:, word_index]
+            word_vector = word_vector.reshape(1, -1)
+            word_embedding_vector = word_embedding_vector.reshape(1, -1)
+            if measure == 'euclidian':
+                similarities.append((word, euclidean(word_embedding_vector, word_vector)))
+            elif measure == 'cosine_abs':
+                similarities.append((word, np.abs(cosine_similarity(word_embedding_vector, word_vector))))
+            else:
+                similarities.append((word, cosine_similarity(word_embedding_vector, word_vector)))
+            # end if
+        # end for
+
+        # Sort
+        similarities.sort(key=lambda tup: tup[1], reverse=True)
+
+        return similarities[:limit]
+    # end nearest_word
+
     # Get word similarities
-    def similarity(self, word1, word2):
+    def similarity(self, word1, word2, measure='euclidian'):
         """
         Get word similarities
         :param word1:
         :param word2:
+        :param measure:
         :return:
         """
         word1 = word1.lower()
@@ -236,15 +266,22 @@ class Word2Vec(WordSimilarity):
             word2_vector = self._word_embeddings[:, word2_index]
             word1_vector = word1_vector.reshape(1, -1)
             word2_vector = word2_vector.reshape(1, -1)
-            return cosine_similarity(word1_vector, word2_vector)
+            if measure == 'euclidian':
+                return euclidean(word1_vector, word2_vector)
+            elif measure == 'cosine_abs':
+                return np.abs(cosine_similarity(word1_vector, word2_vector))
+            else:
+                return cosine_similarity(word1_vector, word2_vector)
+            # end if
         # end if
     # end similarity
 
     # Get similar words
-    def get_similar_words(self, word1, limit=10):
+    def get_similar_words(self, word1, measure='euclidian', limit=10):
         """
         Get similar words
         :param word1:
+        :param measure:
         :param limit:
         :return:
         """
@@ -252,7 +289,7 @@ class Word2Vec(WordSimilarity):
         similarities = list()
         for word2 in self._voc.keys():
             if word1 != word2:
-                similarities.append((word2, self.similarity(word1, word2)))
+                similarities.append((word2, self.similarity(word1, word2, measure)))
             # end if
         # end for
 
@@ -290,6 +327,16 @@ class Word2Vec(WordSimilarity):
         """
         return self._word_index
     # end get_word_indexes
+
+    # Get word embeddings vector
+    def get_word_embeddings_vector(self, word_text):
+        """
+        Get word embeddings vector
+        :param word_text:
+        :return:
+        """
+        return self._word_embeddings[:, self.get_word_index(word_text)]
+    # end get_word_embeddings_vector
 
     ###########################################
     # Override
