@@ -37,6 +37,7 @@ import logging
 import pickle
 from core.embeddings.Wordsim353 import Wordsim353
 from core.tools.Metrics import Metrics
+from core.tools.Visualization import Visualization
 
 #########################################################################
 # Experience settings
@@ -57,6 +58,7 @@ rc_input_sparsity = 0.01
 ####################################################
 # Functions
 ####################################################
+
 
 ####################################################
 # Main function
@@ -222,20 +224,25 @@ if __name__ == "__main__":
             pickle.dump((word2vec.get_word_indexes(), word_embeddings), open(args.output, 'wb'))
         # end if
 
-        # Similarities
-        logging.info(u"Words similar to he ({}) : {}".format(word2vec.get_word_count(u"he"), word2vec.get_similar_words(u"he")))
-        logging.info(u"Words similar to computer ({}) : {}".format(word2vec.get_word_count(u"computer"), word2vec.get_similar_words(u"computer")))
-        logging.info(u"Words similar to million ({}) : {}".format(word2vec.get_word_count(u"million"), word2vec.get_similar_words(u"million")))
-        logging.info(u"Words similar to Toronto ({}) : {}".format(word2vec.get_word_count(u"Toronto"), word2vec.get_similar_words(u"Toronto")))
-        logging.info(u"Words similar to France ({}) : {}".format(word2vec.get_word_count(u"France"), word2vec.get_similar_words(u"France")))
-        logging.info(u"Words similar to phone ({}) : {}".format(word2vec.get_word_count(u"phone"), word2vec.get_similar_words(u"phone")))
-        logging.info(u"Words similar to ask ({}) : {}".format(word2vec.get_word_count(u"ask"), word2vec.get_similar_words(u"ask")))
-        logging.info(u"Words similar to september ({}) : {}".format(word2vec.get_word_count(u"september"), word2vec.get_similar_words(u"september")))
-        logging.info(u"Words similar to blue ({}) : {}".format(word2vec.get_word_count(u"blue"), word2vec.get_similar_words(u"blue")))
+        # For each distance measure
+        for distance_measure in ['euclidian', 'cosine', 'cosine_abs']:
+            print(u"#" * 100)
+            print(u"# " + distance_measure)
+            print(u"#" * 100)
 
-        # Test relatedness
-        relatedness, relatedness_words = Metrics.relatedness(wordsim353, word2vec)
-        print(u"Relatedness : {}, on {} words".format(relatedness, relatedness_words))
+            # Similarities
+            Visualization.similar_words(
+                [u"he", u"computer", u"million", u"Toronto", u"France", u"phone", u"ask", u"september", u"blue", u"king",
+                 u"man", u"woman"],
+                word2vec, distance_measure=distance_measure)
+
+            # Word computing
+            Visualization.king_man_woman(word2vec, u"king", u"man", u"woman", distance_measure=distance_measure)
+
+            # Test relatedness
+            relatedness, relatedness_words = Metrics.relatedness(wordsim353, word2vec, distance_measure=distance_measure)
+            print(u"Relatedness : {}, on {} words".format(relatedness, relatedness_words))
+        # end for
 
         # If we want a figure
         if args.image is not None:
