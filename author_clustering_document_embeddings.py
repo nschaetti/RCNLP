@@ -62,6 +62,14 @@ rc_input_sparsity = 0.05
 
 
 def get_similar_documents(document_index, document_embeddings, distance_measure='cosine'):
+    """
+
+    :param document_index:
+    :param document_embeddings:
+    :param distance_measure:
+    :return:
+    """
+    reverse = {'euclidian': True, 'cosine': False, 'cosine_abs': False}
     similarities = list()
     for n in range(document_embeddings.shape[1]):
         if n != document_index:
@@ -80,7 +88,7 @@ def get_similar_documents(document_index, document_embeddings, distance_measure=
     # end for
 
     # Sort
-    similarities.sort(key=lambda tup: tup[1])
+    similarities.sort(key=lambda tup: tup[1], reverse=reverse[distance_measure])
 
     return similarities
 # end get_similar_documents
