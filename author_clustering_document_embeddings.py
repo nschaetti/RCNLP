@@ -49,9 +49,9 @@ ex_name = "Authorship Attribution"
 ex_instance = "Two Authors One-hot representations"
 
 # Reservoir Properties
-rc_leak_rate = 0.5  # Leak rate
+rc_leak_rate = 0.1  # Leak rate
 rc_input_scaling = 0.5  # Input scaling
-rc_size = 300  # Reservoir size
+rc_size = 600  # Reservoir size
 rc_spectral_radius = 0.9  # Spectral radius
 rc_w_sparsity = 0.05
 rc_input_sparsity = 0.05
@@ -69,7 +69,7 @@ def get_similar_documents(document_index, document_embeddings, distance_measure=
     :param distance_measure:
     :return:
     """
-    reverse = {'euclidian': True, 'cosine': False, 'cosine_abs': False}
+    reverse = {'euclidian': False, 'cosine': True, 'cosine_abs': True}
     similarities = list()
     for n in range(document_embeddings.shape[1]):
         if n != document_index:
