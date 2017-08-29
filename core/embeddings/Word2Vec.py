@@ -223,6 +223,8 @@ class Word2Vec(WordSimilarity):
         :param measure:
         :return:
         """
+        reverse = {'euclidian': True, 'cosine': False, 'cosine_abs': False}
+
         similarities = list()
         for word in self._voc.keys():
             word_index = self._word_index[word]
@@ -239,7 +241,7 @@ class Word2Vec(WordSimilarity):
         # end for
 
         # Sort
-        similarities.sort(key=lambda tup: tup[1], reverse=True)
+        similarities.sort(key=lambda tup: tup[1], reverse=reverse[measure])
 
         return similarities[:limit]
     # end nearest_word
