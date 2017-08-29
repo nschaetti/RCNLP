@@ -38,6 +38,7 @@ from core.embeddings.Word2Vec import Word2Vec
 from sklearn.manifold import TSNE
 import pylab as plt
 from scipy.spatial.distance import euclidean
+from sklearn.metrics.pairwise import cosine_similarity
 
 #########################################################################
 # Experience settings
@@ -48,23 +49,32 @@ ex_name = "Authorship Attribution"
 ex_instance = "Two Authors One-hot representations"
 
 # Reservoir Properties
-rc_leak_rate = 0.1  # Leak rate
-rc_input_scaling = 0.25  # Input scaling
-rc_size = 25  # Reservoir size
-rc_spectral_radius = 0.1  # Spectral radius
-rc_w_sparsity = 0.1
-rc_input_sparsity = 0.1
+rc_leak_rate = 0.5  # Leak rate
+rc_input_scaling = 0.5  # Input scaling
+rc_size = 300  # Reservoir size
+rc_spectral_radius = 0.9  # Spectral radius
+rc_w_sparsity = 0.05
+rc_input_sparsity = 0.05
 
 ####################################################
 # Functions
 ####################################################
 
 
-def get_similar_documents(document_index, document_embeddings):
+def get_similar_documents(document_index, document_embeddings, distance_measure='cosine'):
     similarities = list()
     for n in range(document_embeddings.shape[1]):
         if n != document_index:
-            distance = euclidean(document_embeddings[:, document_index], document_embeddings[:, n])
+            document_embedding1 = document_embeddings[:, document_index].reshape(1, -1)
+            document_embedding2 = document_embeddings[:, n].reshape(1, -1)
+            if distance_measure == "euclidian":
+                distance = euclidean(document_embedding1, document_embedding2)
+            elif distance_measure == 'cosine_abs':
+                distance = np.abs(cosine_similarity(document_embedding1, document_embedding2))
+            else:
+                distance = cosine_similarity(document_embedding1, document_embedding2)
+            # end if
+            # end if
             similarities.append((n, distance))
         # end if
     # end for
@@ -155,10 +165,13 @@ if __name__ == "__main__":
     document_embeddings = classifier.get_embeddings()
     logger.info(u"Document embeddings shape : {}".format(document_embeddings.shape))
 
-    # Display similar doc for the first document of each author
-    for document_index in np.arange(0, n_total_docs, args.n_authors):
-        similar_doc = get_similar_documents(document_index, document_embeddings)
-        logger.info(u"Documents similar to {} : {}".format(document_index, similar_doc[:10]))
+    # Display similar doc for the first document of each author with each distance measure
+    for distance_measure in ["euclidian", "cosine", "cosine_abs"]:
+        print(u"###################### {} ######################".format(distance_measure))
+        for document_index in np.arange(0, n_total_docs, args.n_authors):
+            similar_doc = get_similar_documents(document_index, document_embeddings, distance_measure=distance_measure)
+            logger.info(u"Documents similar to {} : {}".format(document_index, similar_doc[:10]))
+        # end for
     # end for
 
     # Reduce with t-SNE
