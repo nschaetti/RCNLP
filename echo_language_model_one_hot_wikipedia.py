@@ -82,6 +82,7 @@ if __name__ == "__main__":
     parser.add_argument("--norm", action='store_true', help="Normalize word embeddings?", default=False)
     parser.add_argument("--output", type=str, help="", default=None, required=False)
     parser.add_argument("--wordsims", type=str, help="Word similarity dataset", required=True)
+    parser.add_argument("--n-similar-words", type=int, help="Number of similar words", default=20)
     args = parser.parse_args()
 
     # Init logging
@@ -234,7 +235,7 @@ if __name__ == "__main__":
             Visualization.similar_words(
                 [u"he", u"computer", u"million", u"Toronto", u"France", u"phone", u"ask", u"september", u"blue", u"king",
                  u"man", u"woman"],
-                word2vec, distance_measure=distance_measure)
+                word2vec, distance_measure=distance_measure, limit=args.n_similar_words)
 
             # Word computing
             Visualization.king_man_woman(word2vec, u"king", u"man", u"woman", distance_measure=distance_measure)
