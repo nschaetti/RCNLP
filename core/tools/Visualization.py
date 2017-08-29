@@ -39,7 +39,7 @@ class Visualization:
     # end __init__
 
     @staticmethod
-    def similar_words(words, word2vec, distance_measure='euclidian'):
+    def similar_words(words, word2vec, distance_measure='euclidian', limit=10):
         """
         Similar words
         :param words:
@@ -51,7 +51,7 @@ class Visualization:
         for word in words:
             logging.info(
                 u"Words similar to {} ({}) : {}".format(word, word2vec.get_word_count(word),
-                                                        word2vec.get_similar_words(word, distance_measure)))
+                                                        word2vec.get_similar_words(word, distance_measure, limit)))
         # end for
     # end similar_words
 
