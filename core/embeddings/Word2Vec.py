@@ -223,7 +223,7 @@ class Word2Vec(WordSimilarity):
         :param measure:
         :return:
         """
-        reverse = {'euclidian': True, 'cosine': False, 'cosine_abs': False}
+        reverse = {'euclidian': False, 'cosine': True, 'cosine_abs': True}
 
         similarities = list()
         for word in self._voc.keys():
@@ -287,7 +287,7 @@ class Word2Vec(WordSimilarity):
         :param limit:
         :return:
         """
-        reverse = {'euclidian': True, 'cosine': False, 'cosine_abs': False}
+        reverse = {'euclidian': False, 'cosine': True, 'cosine_abs': True}
 
         word1 = word1.lower()
         similarities = list()
