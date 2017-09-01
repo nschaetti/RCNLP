@@ -76,19 +76,14 @@ if __name__ == "__main__":
     # Load Wordsim353
     wordsim353 = Wordsim353.load(args.wordsims)
 
-    # Word2Vec
-    word2vec = Word2Vec(dim=args.voc_size, mapper='one-hot')
-
     # Current word embeddings
-    (word_indexes, word_embeddings) = pickle.load(open(args.file, 'r'))
+    word2vec = pickle.load(open(args.file, 'r'))
+    word_embeddings = word2vec.get_word_embeddings()
 
     # Word embedding matrix's size
     logging.info(u"Word embedding matrix's size : {}".format(word_embeddings.shape))
     logging.info(u"Word embedding vectors average : {}".format(np.average(word_embeddings)))
     logging.info(u"Word embedding vectors sddev : {}".format(np.std(word_embeddings)))
-
-    # Set word embeddings
-    word2vec.set_word_embeddings(word_embeddings=word_embeddings)
 
     # For each distance measure
     for distance_measure in ['euclidian', 'cosine', 'cosine_abs']:
@@ -115,8 +110,8 @@ if __name__ == "__main__":
         selected_words = [u"switzerland", u"france", u"italy", u"spain", u"germany", u"canada", u"belgium", u"bern",
                           u"paris", u"rome", u"madrid", u"berlin", u"ottawa", u"brussels"]
         Visualization.top_words_figure(word2vec, word_embeddings, args.image, args.fig_size, args.count_limit)
-        Visualization.words_figure(selected_words, word2vec, word_embeddings, args.image, args.fig_size,
-                                   reduction='PCA?')
+        Visualization.words_figure(selected_words, word2vec, word_embeddings, args.image + u"_words", args.fig_size,
+                                   reduction='PCA')
     # end if
 
 # end if
