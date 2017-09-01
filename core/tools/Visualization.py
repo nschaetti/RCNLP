@@ -115,7 +115,7 @@ class Visualization:
 
         # Save image
         logging.info(u"Saving figure to {}".format(image + ".png"))
-        plt.imsave(image + ".png")
+        plt.savefig(image + ".png")
     # end save_figure
 
     @staticmethod
@@ -180,10 +180,14 @@ class Visualization:
         selected_word_indexes = dict()
         word_pos = 0
         for word in words:
-            word_index = word2vec.get_word_index(word)
-            selected_word_embeddings[:, word_pos] = word_embeddings[:, word_index]
-            selected_word_indexes[word] = word_pos
-            word_pos += 1
+            try:
+                word_index = word2vec.get_word_index(word)
+                selected_word_embeddings[:, word_pos] = word_embeddings[:, word_index]
+                selected_word_indexes[word] = word_pos
+                word_pos += 1
+            except KeyError:
+                pass
+            # end try
         # end for
 
         # Word embedding matrix's size
