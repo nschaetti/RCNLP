@@ -1,7 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 #Imports
 import numpy as np
 import spacy
+import pickle
+import re
 from numpy import linalg as LA
 import scipy.sparse as sp
 from sklearn.metrics.pairwise import cosine_similarity
@@ -215,6 +219,15 @@ class Word2Vec(WordSimilarity):
         return self._total_counter
     # end get_total_count
 
+    # Get word embeddings
+    def get_word_embeddings(self):
+        """
+        Get word embeddings
+        :return:
+        """
+        return self._word_embeddings
+    # end get_word_embeddings
+
     # Get nearest word
     def nearest_word(self, word_embedding_vector, measure='euclidian', limit=10):
         """
@@ -313,6 +326,15 @@ class Word2Vec(WordSimilarity):
         self._word_embeddings = word_embeddings
     # end set_word_embeddings
 
+    # Set word indexes
+    def set_word_indexes(self, word_indexes):
+        """
+        Set word indexes
+        :param word_indexes:
+        :return:
+        """
+        self._word_index = word_indexes
+
     # Get word index
     def get_word_index(self, word_text):
         """
@@ -389,11 +411,29 @@ class Word2Vec(WordSimilarity):
 
         # For each word
         for word in doc:
+            # Clean
             word_text = word.text
             word_text = word_text.replace(u"\n", u"")
             word_text = word_text.replace(u"\t", u"")
             word_text = word_text.replace(u"\r", u"")
             word_text = word_text.replace(u" ", u"")
+            word_text = word_text.replace(u"–", u"-")
+
+            # Replacement
+            word_text = Word2Vec.replace_token(word_text, r"^[0-9]{4}\-[0-9]{4}$", u"<interval>")
+            word_text = Word2Vec.replace_token(word_text, r"^[0-9]{4}\-[0-9]{2}$", u"<interval>")
+            word_text = Word2Vec.replace_token(word_text, r"^\d+th$", u"<th>")
+            word_text = Word2Vec.replace_token(word_text, r"^\d+nd$", u"<th>")
+            word_text = Word2Vec.replace_token(word_text, r"^[+-]?\d+(?:\.\d+)?\%$", u"<percent>")
+            word_text = Word2Vec.replace_token(word_text, r"^[+-]?\d+(?:\.\d+)+$", u"<float>")
+            word_text = Word2Vec.replace_token(word_text, r'^\d+(?:,\d+)+$', u"<number>")
+            word_text = Word2Vec.replace_token(word_text, r"^[0-9]{4}$", u"<4digits>")
+            word_text = Word2Vec.replace_token(word_text, r"^[0-9]{3}$", u"<3digits>")
+            word_text = Word2Vec.replace_token(word_text, r"^[0-9]{2}$", u"<2digits>")
+            word_text = Word2Vec.replace_token(word_text, r"^[0-9]{1}$", u"<1digit>")
+            word_text = Word2Vec.replace_token(word_text, r"^[+-]?\d+$", u"<integer>")
+
+            # Add
             if len(word_text) > 0:
                 self._total_counter += 1
                 try:
@@ -458,6 +498,36 @@ class Word2Vec(WordSimilarity):
     ###########################################
     # Private
     ###########################################
+
+    # Save Word2Vec
+    def save(self, file_name):
+        """
+        Save Word2Vec
+        :param file_name:
+        :return:
+        """
+        pickle.dump(self, open(file_name, 'wb'))
+    # end save
+
+    ###########################################
+    # Static
+    ###########################################
+
+    # Replace token if match a regex
+    @staticmethod
+    def replace_token(token, regex, repl):
+        """
+        Replace token if match a regex
+        :param token:
+        :param regex:
+        :param repl:
+        :return:
+        """
+        if re.match(regex, token):
+            return repl
+        # end if
+        return token
+    # end replace_token
 
     # Map word to a dense vector
     @staticmethod
