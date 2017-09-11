@@ -73,14 +73,11 @@ class OneHotConverter(Converter):
         :param text: The text to convert.
         :return: An numpy array of inputs.
         """
-        # Load language model
-        nlp = spacy.load(self._lang)
-
         # Process text
         if self._upper_level is not None:
-            doc = nlp(self._upper_level(text))
+            doc = self._nlp(self._upper_level(text))
         else:
-            doc = nlp(text)
+            doc = self._nlp(text)
         # end if
 
         # Resulting numpy array

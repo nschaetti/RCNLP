@@ -26,6 +26,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
+import spacy
 
 
 # Base class for converters
@@ -47,6 +48,9 @@ class Converter(object):
         self._lang = lang
         self._pca_model = pca_model
         self._upper_level = upper_level
+
+        # Language model
+        self._nlp = spacy.load(self._lang)
 
         # Generate tag symbols
         if tag_to_symbol is None:

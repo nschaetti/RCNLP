@@ -69,12 +69,8 @@ class PosConverter(Converter):
         :param text: The text to convert.
         :return: An numpy array of inputs.
         """
-
-        # Load language model
-        nlp = spacy.load(self._lang)
-
         # Process text
-        doc = nlp(text)
+        doc = self._nlp(text)
 
         # Resulting numpy array
         doc_array = np.array([])

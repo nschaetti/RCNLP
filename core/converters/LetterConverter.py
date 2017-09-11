@@ -89,8 +89,8 @@ class LetterConverter(Converter):
                     init = True
                 else:
                     doc_array = np.vstack((doc_array, sym))
-                    # end if
-                    # end if
+                # end if
+            # end if
         # end for
 
         return self.reduce(doc_array)

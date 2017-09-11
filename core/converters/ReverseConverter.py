@@ -48,11 +48,8 @@ class ReverseConverter(Converter):
         :param text: The text to convert.
         :return: An inverted text.
         """
-        # Load language model
-        nlp = spacy.load(self._lang)
-
         # Process text
-        doc = nlp(text)
+        doc = self._nlp(text)
 
         # Tokens
         tokens = list()
